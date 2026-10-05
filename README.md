@@ -78,6 +78,8 @@ can-display/                Модуль вывода параметров на 
   docs/                              документация CAN-сигналов, распиновка
 
 flasher/                    Приложение: чтение и (в перспективе) запись
+  check_bmw_env.py                 проверка окружения: Python, api32.dll, EDIABAS,
+                                   OBD.INI, COM-порт, кабель, SGBD приборки
   kombi_read_flash.py              чтение памяти через EDIABAS api32.dll
 
 re-tools/                   Декодеры прошивок и SGBD
@@ -140,11 +142,25 @@ python3 f2mc_cfg.py <путь>/9316169A.0pa --range 0xF9C000,0xFF0000 --json out
 
 ```bash
 py -3-32 -m pip install -r flasher/requirements.txt
+
+# окружение целиком: Python, pydiabas, api32.dll, EDIABAS.INI, OBD.INI,
+# COM-порт, драйвер кабеля, SGBD приборки в EcuPath
+py -3-32 flasher/check_bmw_env.py
+
+# сверка проприетарных файлов с манифестом (по SHA-256: имена в установке
+# SP-Daten отличаются от наших, поэтому поиск идёт по содержимому)
+py -3-32 flasher/check_bmw_env.py --firmware-scan "G:\SP-DATEN 67.1"
+
 py -3-32 flasher/kombi_read_flash.py --check
 py -3-32 flasher/kombi_read_flash.py --ident
-py -3-32 flasher/kombi_read_flash.py --segment FLASH \
+py -3-32 flasher/kombi_read_flash.py --segment LAR \
     --start 0xFFC000 --end 0x1000000 --out boot.bin
 ```
+
+`check_bmw_env.py` проверяет установку BMW Standard Tools, `--check` у
+`kombi_read_flash.py` — только Python и `pydiabas`. Код возврата:
+0 — всё на месте, 1 — предупреждения (чаще всего не подключён кабель),
+2 — критично, работать не получится. Приборку скрипт не опрашивает.
 
 Подробная пошаговая инструкция, включая стенд на K-CAN:
 [`docs/research/INSTRUCTION_READ_FLASH.md`](docs/research/INSTRUCTION_READ_FLASH.md).

@@ -32,6 +32,13 @@ import sys
 import time
 from pathlib import Path
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Кандидаты имени ЭБУ: EDIABAS резолвит имя в <имя>.prg в C:\EDIABAS\Ecu
 CANDIDATE_ECUS = ["KOMB87", "KOMBI", "KOMB87.PRG", "KOMBI.PRG"]
 
@@ -100,11 +107,11 @@ class Kombi:
     """Тонкая обёртка над pydiabas: инициализация, джобы, ожидание."""
 
     def __init__(self, ecu: str, timeout_s: float = 30.0) -> None:
-        from pydiabas import Pydiabas
+        from pydiabas.ediabas import EDIABAS
 
         self.ecu = ecu
         self.timeout_s = timeout_s
-        self.api = Pydiabas()
+        self.api = EDIABAS()
         self.api.init()
 
     def close(self) -> None:
@@ -123,8 +130,10 @@ class Kombi:
         """apiJob асинхронный: ждём, пока EDIABAS освободится."""
         deadline = time.monotonic() + self.timeout_s
         while True:
-            state = self.api.state()
-            if int(getattr(state, "value", state)) == 1:  # READY
+            state = int(getattr(self.api.state(), "value", self.api.state()))
+            if state == 1:  # READY
+                return
+            if state in (2, 3):  # BREAK or ERROR: джоб завершился с ошибкой
                 return
             if time.monotonic() > deadline:
                 raise EcuError(f"таймаут ожидания EDIABAS ({self.timeout_s} с)")
@@ -139,7 +148,10 @@ class Kombi:
 
     def result_text(self, name: str) -> str:
         try:
-            return self.api.resultText(name).strip()
+            val = self.api.resultText(name)
+            if isinstance(val, bytes):
+                return val.decode("latin-1", errors="replace").strip()
+            return str(val).strip()
         except Exception:  # noqa: BLE001
             return ""
 
@@ -161,8 +173,24 @@ class Kombi:
         self.run_job("SPEICHER_LESEN", f"{segment};0x{address:06X};{count}")
         status = self.result_text("JOB_STATUS")
         if status and status.upper() != "OKAY":
+            if "SUBFUNCTION_NOT_SUPPORTED" in status.upper() and segment.upper() != "LAR":
+                raise EcuError(f"JOB_STATUS={status} (в E90 используйте --segment LAR)")
             raise EcuError(f"JOB_STATUS={status}")
-        return self.api.resultBinary("DATEN")
+        # Обход бага pydiabas (resultBinary обрезает данные на первом нулевом байте \x00)
+        import ctypes
+        from pydiabas.ediabas import api32, statics
+        buf = ctypes.create_string_buffer(statics.API_MAX_TEXT)
+        buflen = ctypes.c_ushort()
+        rc = api32.apiResultBinary(
+            self.api._handle,
+            ctypes.byref(buf),
+            ctypes.byref(buflen),
+            b"DATEN",
+            ctypes.c_int(1),
+        )
+        if rc:
+            return bytes(buf.raw[:buflen.value])
+        return bytes(self.api.resultBinary("DATEN"))
 
 
 def connect(ecu: str, timeout_s: float) -> Kombi:
@@ -307,15 +335,15 @@ def main() -> int:
                     help="только проверить окружение и выйти")
     ap.add_argument("--ident", action="store_true",
                     help="прочитать идентификацию ЭБУ и выйти")
-    ap.add_argument("--segment", default="FLASH",
+    ap.add_argument("--segment", default="LAR",
                     help="LAR/ROMI/ROMX/NVRAM/RAMIS/RAMXX/FLASH/UIFM/VODM/"
-                         "FLASHX/RAMIL (по умолчанию FLASH)")
+                         "FLASHX/RAMIL (по умолчанию LAR)")
     ap.add_argument("--start", type=parse_int, default=0xFFC000,
                     help="начальный адрес (по умолчанию 0xFFC000)")
     ap.add_argument("--end", type=parse_int, default=0x1000000,
                     help="конечный адрес, не включая (по умолчанию 0x1000000)")
-    ap.add_argument("--chunk", type=int, default=254,
-                    help="байт за вызов, максимум 254")
+    ap.add_argument("--chunk", type=int, default=128,
+                    help="байт за вызов, максимум 180 (по умолчанию 128)")
     ap.add_argument("--out", type=Path, default=Path("kombi_dump.bin"),
                     help="куда писать raw-дамп")
     ap.add_argument("--retries", type=int, default=2,
@@ -327,8 +355,8 @@ def main() -> int:
     if args.check:
         return check_environment()
 
-    if not (1 <= args.chunk <= 254):
-        fail("--chunk должен быть 1..254 (ограничение джоба SPEICHER_LESEN)")
+    if not (1 <= args.chunk <= 180):
+        fail("--chunk должен быть 1..180 (буфер приборки E90 не принимает пакеты >180 байт)")
     if args.end <= args.start:
         fail("--end должен быть больше --start")
 
