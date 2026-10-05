@@ -27,12 +27,12 @@ $0A Tankinhalt" — извлечённая телеграмма 82 FF F1 21 0A �
 """
 
 import os
+from pathlib import Path
 import re
 import sys
 
-BIMMERDATEN = os.environ.get(
-    "BIMMERDATEN", "/Users/densh/Work/Develop/BMW/BimmerDaten"
-)
+_DEFAULT_BIMMERDATEN = Path(__file__).resolve().parents[3] / "BimmerDaten"
+BIMMERDATEN = os.environ.get("BIMMERDATEN", str(_DEFAULT_BIMMERDATEN))
 
 TELEGRAM = re.compile(r"move\s+S\d+,\{([^}]*)\}")
 BYTE = re.compile(r"\$([0-9A-F]{2})\.B")

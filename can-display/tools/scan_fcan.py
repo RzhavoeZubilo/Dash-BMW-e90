@@ -23,13 +23,13 @@
 """
 
 import os
+from pathlib import Path
 import re
 import sys
 from collections import defaultdict
 
-BIMMERDATEN = os.environ.get(
-    "BIMMERDATEN", "/Users/densh/Work/Develop/BMW/BimmerDaten"
-)
+_DEFAULT_BIMMERDATEN = Path(__file__).resolve().parents[3] / "BimmerDaten"
+BIMMERDATEN = os.environ.get("BIMMERDATEN", str(_DEFAULT_BIMMERDATEN))
 
 TELEGRAM = re.compile(r"move\s+S\d+,\{([^}]*)\}")
 BYTE = re.compile(r"\$([0-9A-F]{2})\.B")

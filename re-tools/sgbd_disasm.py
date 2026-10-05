@@ -19,15 +19,28 @@
     python3 sgbd_disasm.py KOMB87.prg --list
 """
 import argparse
+import os
 import sys
 from pathlib import Path
 
-# decoderPrg.py лежит в <repo>/BimmerDaten/
-_REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO / "BimmerDaten"))
+# Поиск decoderPrg.py: через BIMMERDATEN env var или относительные пути
+_ENV_PATH = os.environ.get("BIMMERDATEN")
+_CANDIDATES = [
+    Path(_ENV_PATH) if _ENV_PATH else None,
+    Path(__file__).resolve().parents[1] / "BimmerDaten",
+    Path(__file__).resolve().parents[2] / "BimmerDaten",
+]
+for c in _CANDIDATES:
+    if c and (c / "decoderPrg.py").exists():
+        sys.path.insert(0, str(c))
+        break
 
-import decoderPrg  # noqa: E402
-from decoderPrg import OC_MAP, PrgParser  # noqa: E402
+try:
+    import decoderPrg  # noqa: E402
+    from decoderPrg import OC_MAP, PrgParser  # noqa: E402
+except ImportError:
+    print("Ошибка: модуль decoderPrg не найден. Задайте путь через BIMMERDATEN=<путь>", file=sys.stderr)
+    sys.exit(1)
 
 
 def disasm_job(p: PrgParser, addr: int, limit: int = 20000):
