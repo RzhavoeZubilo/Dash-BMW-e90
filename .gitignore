@@ -22,6 +22,8 @@ docs/vendor/
 # ── сборка и мусор ──
 __pycache__/
 *.py[cod]
+*.o
+*.obj
 .pio/
 .vscode/
 .idea/
