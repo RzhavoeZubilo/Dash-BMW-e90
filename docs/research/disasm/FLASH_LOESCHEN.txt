@@ -1,0 +1,1434 @@
+=== FLASH_LOESCHEN @ 0x000493D0 ===
+; JOBNAME:FLASH_LOESCHEN
+; JOBCOMMENT:Flash loeschen
+; JOBCOMMENT:Standard Flashjob
+; JOBCOMMENT:KWP2000: $31 StartRoutineByLocalIdentifier
+; JOBCOMMENT:$02 ClearMemory
+; JOBCOMMENT:Modus  : Default
+; ARG:BINAER_BUFFER
+; ARGTYPE:binary
+; ARGCOMMENT:Als Argument wird ein vorgefuellter Binaerbuffer uebergeben
+; ARGCOMMENT:Der Binaerbuffer hat folgenden Aufbau
+; ARGCOMMENT:Byte 0              : Datentyp (1:Daten, 2:Maskendaten)
+; ARGCOMMENT:Byte 1              : (unbenutzt) Wortbreite (1:Byte, 2:Word, 3:DWord)
+; ARGCOMMENT:Byte 2              : (unbenutzt) Byteordnung (0:LSB zuerst, 1 MSB zuerst)
+; ARGCOMMENT:Byte 3              : Adressierung (0: freie Adressierung, 1:Blockadressierung)
+; ARGCOMMENT:Byte 4              : Loeschzeit in Sekunden (Byteparameter 1)
+; ARGCOMMENT:Byte 5,6            : Loeschzeit in Sekunden (WordParameter 1 (low/high))
+; ARGCOMMENT:Byte 7,8            : (unbenutzt) WordParameter 2 (low/high)
+; ARGCOMMENT:Byte 9,10,11,12     : (unbenutzt) Maske (linksbuendig)
+; ARGCOMMENT:Byte 13,14          : Anzahl Bytedaten (low/high)
+; ARGCOMMENT:Byte 15,16          : Anzahl Wortdaten (low/high)
+; ARGCOMMENT:Byte 17,18,19,20    : Wortadresse (low/highbyte, low/highword)
+; ARGCOMMENT:Byte 21,....        : (unbenutzt) Flashdaten
+; ARGCOMMENT:Byte 21+Anzahl Daten: ETX (0x03)
+; RESULT:FLASH_LOESCHEN_STATUS
+; RESULTTYPE:int
+; RESULTCOMMENT:Loeschstatus
+; RESULTCOMMENT:1 = Speicher geloescht
+; RESULTCOMMENT:2 = Speicher nicht geloescht
+; RESULTCOMMENT:5 = Signaturpruefung PAF nicht durchgefuehrt
+; RESULT:JOB_STATUS
+; RESULTTYPE:string
+; RESULTCOMMENT:OKAY, wenn fehlerfrei
+; RESULTCOMMENT:table JobResult STATUS_TEXT
+; RESULT:_TEL_AUFTRAG
+; RESULTTYPE:binary
+; RESULTCOMMENT:Hex-Auftrag an SG
+; RESULT:_TEL_ANTWORT
+; RESULTTYPE:binary
+; RESULTCOMMENT:Hex-Antwort von SG
+ 000493D0: clear      S1
+ 000493D3: move       S1,{$89.B,$FF.B,$F1.B,$31.B,$02.B,$00.B,$00.B,$00.B,$06.B,$00.B,$00.B,$00.B}
+ 000493E4: clear      S2
+ 000493E7: move       S2,S1
+ 000493EB: move       L0,#$00000002.L
+ 000493F2: push       L0
+ 000493F5: atsp       L0,#$00000004.L
+ 000493FC: move       S0[#$0004],B0
+ 00049402: move       S0[#$0005],B1
+ 00049408: move       S0[#$0006],B2
+ 0004940E: move       S0[#$0007],B3
+ 00049414: pop        L0
+ 00049417: clear      S1
+ 0004941A: pary       S1
+ 0004941D: jz         __0004942F
+ 00049423: push       #$00000001.L
+ 00049429: jump       __00049435
+*0004942F: push       #$00000000.L
+*00049435: pop        L0
+ 00049438: jz         __0004959B
+ 0004943E: nop
+ 00049440: clear      S1
+ 00049443: pary       S1
+ 00049446: jz         __00049458
+ 0004944C: push       #$00000001.L
+ 00049452: jump       __0004945E
+*00049458: push       #$00000000.L
+*0004945E: clear      S6
+ 00049461: move       S6,S1
+ 00049465: pop        L0
+ 00049468: move       L0,#$00000000.L
+ 0004946F: push       L0
+ 00049472: atsp       L1,#$00000004.L
+ 00049479: clear      S1
+ 0004947C: move       S1,S6
+ 00049480: clear      L0
+ 00049483: move       B0,S1[L1]
+ 00049488: push       L0
+ 0004948B: pop        L0
+ 0004948E: pop        L1
+ 00049491: push       L0
+ 00049494: move       L0,#$00000001.L
+ 0004949B: push       L0
+ 0004949E: pop        L1
+ 000494A1: pop        L0
+ 000494A4: comp       L0,L1
+ 000494A8: jnz        __000494BA
+ 000494AE: push       #$00000000.L
+ 000494B4: jump       __000494C0
+*000494BA: push       #$00000001.L
+*000494C0: pop        L0
+ 000494C3: jz         __000494FE
+ 000494C9: nop
+ 000494CB: clear      S1
+ 000494CE: move       S1,"ERROR_DATA_TYPE"
+ 000494E3: push       #$00000001.L
+ 000494E9: ergs       "JOB_STATUS",S1
+ 000494F9: pop        L0
+ 000494FC: eoj
+*000494FE: move       L0,#$00000003.L
+ 00049505: push       L0
+ 00049508: atsp       L1,#$00000004.L
+ 0004950F: clear      S1
+ 00049512: move       S1,S6
+ 00049516: clear      L0
+ 00049519: move       B0,S1[L1]
+ 0004951E: push       L0
+ 00049521: pop        L0
+ 00049524: pop        L1
+ 00049527: push       L0
+ 0004952A: move       L0,#$00000000.L
+ 00049531: push       L0
+ 00049534: pop        L1
+ 00049537: pop        L0
+ 0004953A: comp       L0,L1
+ 0004953E: jnz        __00049550
+ 00049544: push       #$00000000.L
+ 0004954A: jump       __00049556
+*00049550: push       #$00000001.L
+*00049556: pop        L0
+ 00049559: jz         __00049595
+ 0004955F: nop
+ 00049561: clear      S1
+ 00049564: move       S1,"ERROR_BIN_BUFFER"
+ 0004957A: push       #$00000001.L
+ 00049580: ergs       "JOB_STATUS",S1
+ 00049590: pop        L0
+ 00049593: eoj
+*00049595: jump       __000495D2
+*0004959B: clear      S1
+ 0004959E: move       S1,"ERROR_NO_BIN_BUFFER"
+ 000495B7: push       #$00000001.L
+ 000495BD: ergs       "JOB_STATUS",S1
+ 000495CD: pop        L0
+ 000495D0: eoj
+*000495D2: clear      S1
+ 000495D5: move       S1,S5
+ 000495D9: push       #$00000001.L
+ 000495DF: clear      S5
+ 000495E2: push       #$00000001.L
+ 000495E8: pop        L1
+ 000495EB: pop        L0
+ 000495EE: push       L1
+ 000495F1: pop        L0
+ 000495F4: clear      S1
+ 000495F7: move       S1,S5
+ 000495FB: push       #$00000001.L
+ 00049601: shmget     S5,""
+ 00049607: push       #$00000001.L
+ 0004960D: pop        L1
+ 00049610: pop        L0
+ 00049613: push       L1
+ 00049616: pop        L0
+ 00049619: move       L0,#$00000001.L
+ 00049620: push       L0
+ 00049623: move       L0,#$000003EA.L
+ 0004962A: push       L0
+ 0004962D: atsp       L1,#$00000004.L
+ 00049634: clear      S1
+ 00049637: move       S1,S5
+ 0004963B: clear      L0
+ 0004963E: move       B0,S1[L1]
+ 00049643: push       L0
+ 00049646: pop        L0
+ 00049649: pop        L1
+ 0004964C: push       L0
+ 0004964F: pop        L0
+ 00049652: pop        L1
+ 00049655: push       L0
+ 00049658: move       S2[L1],B0
+ 0004965D: pop        L0
+ 00049660: move       L0,#$00000005.L
+ 00049667: push       L0
+ 0004966A: move       L0,#$00000013.L
+ 00049671: push       L0
+ 00049674: atsp       L1,#$00000004.L
+ 0004967B: clear      S1
+ 0004967E: move       S1,S6
+ 00049682: clear      L0
+ 00049685: move       B0,S1[L1]
+ 0004968A: push       L0
+ 0004968D: pop        L0
+ 00049690: pop        L1
+ 00049693: push       L0
+ 00049696: pop        L0
+ 00049699: pop        L1
+ 0004969C: push       L0
+ 0004969F: move       S2[L1],B0
+ 000496A4: pop        L0
+ 000496A7: move       L0,#$00000006.L
+ 000496AE: push       L0
+ 000496B1: move       L0,#$00000012.L
+ 000496B8: push       L0
+ 000496BB: atsp       L1,#$00000004.L
+ 000496C2: clear      S1
+ 000496C5: move       S1,S6
+ 000496C9: clear      L0
+ 000496CC: move       B0,S1[L1]
+ 000496D1: push       L0
+ 000496D4: pop        L0
+ 000496D7: pop        L1
+ 000496DA: push       L0
+ 000496DD: pop        L0
+ 000496E0: pop        L1
+ 000496E3: push       L0
+ 000496E6: move       S2[L1],B0
+ 000496EB: pop        L0
+ 000496EE: move       L0,#$00000007.L
+ 000496F5: push       L0
+ 000496F8: move       L0,#$00000011.L
+ 000496FF: push       L0
+ 00049702: atsp       L1,#$00000004.L
+ 00049709: clear      S1
+ 0004970C: move       S1,S6
+ 00049710: clear      L0
+ 00049713: move       B0,S1[L1]
+ 00049718: push       L0
+ 0004971B: pop        L0
+ 0004971E: pop        L1
+ 00049721: push       L0
+ 00049724: pop        L0
+ 00049727: pop        L1
+ 0004972A: push       L0
+ 0004972D: move       S2[L1],B0
+ 00049732: pop        L0
+ 00049735: move       L0,#$00000008.L
+ 0004973C: push       L0
+ 0004973F: move       L0,#$00000006.L
+ 00049746: push       L0
+ 00049749: pop        L0
+ 0004974C: pop        L1
+ 0004974F: push       L0
+ 00049752: move       S2[L1],B0
+ 00049757: pop        L0
+ 0004975A: move       L0,#$00000014.L
+ 00049761: push       L0
+ 00049764: atsp       L1,#$00000004.L
+ 0004976B: clear      S1
+ 0004976E: move       S1,S6
+ 00049772: clear      L0
+ 00049775: move       B0,S1[L1]
+ 0004977A: push       L0
+ 0004977D: pop        L0
+ 00049780: pop        L1
+ 00049783: push       L0
+ 00049786: move       L0,#$00000002.L
+ 0004978D: push       L0
+ 00049790: pop        L1
+ 00049793: pop        L0
+ 00049796: comp       L0,L1
+ 0004979A: jz         __000497AC
+ 000497A0: push       #$00000000.L
+ 000497A6: jump       __000497B2
+*000497AC: push       #$00000001.L
+*000497B2: pop        L0
+ 000497B5: jz         __000497E2
+ 000497BB: nop
+ 000497BD: move       L0,#$00000008.L
+ 000497C4: push       L0
+ 000497C7: move       L0,#$00000002.L
+ 000497CE: push       L0
+ 000497D1: pop        L0
+ 000497D4: pop        L1
+ 000497D7: push       L0
+ 000497DA: move       S2[L1],B0
+ 000497DF: pop        L0
+*000497E2: move       L0,#$00000014.L
+ 000497E9: push       L0
+ 000497EC: atsp       L1,#$00000004.L
+ 000497F3: clear      S1
+ 000497F6: move       S1,S6
+ 000497FA: clear      L0
+ 000497FD: move       B0,S1[L1]
+ 00049802: push       L0
+ 00049805: pop        L0
+ 00049808: pop        L1
+ 0004980B: push       L0
+ 0004980E: move       L0,#$00000009.L
+ 00049815: push       L0
+ 00049818: pop        L1
+ 0004981B: pop        L0
+ 0004981E: comp       L0,L1
+ 00049822: jz         __00049834
+ 00049828: push       #$00000000.L
+ 0004982E: jump       __0004983A
+*00049834: push       #$00000001.L
+*0004983A: pop        L0
+ 0004983D: jz         __0004986A
+ 00049843: nop
+ 00049845: move       L0,#$00000008.L
+ 0004984C: push       L0
+ 0004984F: move       L0,#$00000009.L
+ 00049856: push       L0
+ 00049859: pop        L0
+ 0004985C: pop        L1
+ 0004985F: push       L0
+ 00049862: move       S2[L1],B0
+ 00049867: pop        L0
+*0004986A: move       L0,#$00000009.L
+ 00049871: push       L0
+ 00049874: move       L0,#$0000000F.L
+ 0004987B: push       L0
+ 0004987E: atsp       L1,#$00000004.L
+ 00049885: clear      S1
+ 00049888: move       S1,S6
+ 0004988C: clear      L0
+ 0004988F: move       B0,S1[L1]
+ 00049894: push       L0
+ 00049897: pop        L0
+ 0004989A: pop        L1
+ 0004989D: push       L0
+ 000498A0: pop        L0
+ 000498A3: pop        L1
+ 000498A6: push       L0
+ 000498A9: move       S2[L1],B0
+ 000498AE: pop        L0
+ 000498B1: move       L0,#$0000000A.L
+ 000498B8: push       L0
+ 000498BB: move       L0,#$0000000E.L
+ 000498C2: push       L0
+ 000498C5: atsp       L1,#$00000004.L
+ 000498CC: clear      S1
+ 000498CF: move       S1,S6
+ 000498D3: clear      L0
+ 000498D6: move       B0,S1[L1]
+ 000498DB: push       L0
+ 000498DE: pop        L0
+ 000498E1: pop        L1
+ 000498E4: push       L0
+ 000498E7: pop        L0
+ 000498EA: pop        L1
+ 000498ED: push       L0
+ 000498F0: move       S2[L1],B0
+ 000498F5: pop        L0
+ 000498F8: move       L0,#$0000000B.L
+ 000498FF: push       L0
+ 00049902: move       L0,#$0000000D.L
+ 00049909: push       L0
+ 0004990C: atsp       L1,#$00000004.L
+ 00049913: clear      S1
+ 00049916: move       S1,S6
+ 0004991A: clear      L0
+ 0004991D: move       B0,S1[L1]
+ 00049922: push       L0
+ 00049925: pop        L0
+ 00049928: pop        L1
+ 0004992B: push       L0
+ 0004992E: pop        L0
+ 00049931: pop        L1
+ 00049934: push       L0
+ 00049937: move       S2[L1],B0
+ 0004993C: pop        L0
+ 0004993F: move       L0,#$00000006.L
+ 00049946: push       L0
+ 00049949: atsp       L1,#$00000004.L
+ 00049950: clear      S1
+ 00049953: move       S1,S6
+ 00049957: clear      L0
+ 0004995A: move       B0,S1[L1]
+ 0004995F: push       L0
+ 00049962: pop        L0
+ 00049965: pop        L1
+ 00049968: push       L0
+ 0004996B: move       L0,#$00000008.L
+ 00049972: push       L0
+ 00049975: pop        L1
+ 00049978: pop        L0
+ 0004997B: asl        L0,L1
+ 0004997F: push       L0
+ 00049982: move       L0,#$00000005.L
+ 00049989: push       L0
+ 0004998C: atsp       L1,#$00000004.L
+ 00049993: clear      S1
+ 00049996: move       S1,S6
+ 0004999A: clear      L0
+ 0004999D: move       B0,S1[L1]
+ 000499A2: push       L0
+ 000499A5: pop        L0
+ 000499A8: pop        L1
+ 000499AB: push       L0
+ 000499AE: pop        L1
+ 000499B1: pop        L0
+ 000499B4: adds       L0,L1
+ 000499B8: push       L0
+ 000499BB: atsp       L0,#$00000004.L
+ 000499C2: move       S0[#$0000],B0
+ 000499C8: move       S0[#$0001],B1
+ 000499CE: move       S0[#$0002],B2
+ 000499D4: move       S0[#$0003],B3
+ 000499DA: pop        L0
+ 000499DD: move       L0,S0[#$0000]
+ 000499E3: push       L0
+ 000499E6: move       L0,#$00000000.L
+ 000499ED: push       L0
+ 000499F0: pop        L1
+ 000499F3: pop        L0
+ 000499F6: comp       L0,L1
+ 000499FA: jz         __00049A0C
+ 00049A00: push       #$00000000.L
+ 00049A06: jump       __00049A12
+*00049A0C: push       #$00000001.L
+*00049A12: pop        L0
+ 00049A15: jz         __00049A6B
+ 00049A1B: nop
+ 00049A1D: move       L0,#$00000004.L
+ 00049A24: push       L0
+ 00049A27: atsp       L1,#$00000004.L
+ 00049A2E: clear      S1
+ 00049A31: move       S1,S6
+ 00049A35: clear      L0
+ 00049A38: move       B0,S1[L1]
+ 00049A3D: push       L0
+ 00049A40: pop        L0
+ 00049A43: pop        L1
+ 00049A46: push       L0
+ 00049A49: atsp       L0,#$00000004.L
+ 00049A50: move       S0[#$0000],B0
+ 00049A56: move       S0[#$0001],B1
+ 00049A5C: move       S0[#$0002],B2
+ 00049A62: move       S0[#$0003],B3
+ 00049A68: pop        L0
+*00049A6B: move       L0,S0[#$0000]
+ 00049A71: push       L0
+ 00049A74: move       L0,#$00000000.L
+ 00049A7B: push       L0
+ 00049A7E: pop        L1
+ 00049A81: pop        L0
+ 00049A84: comp       L0,L1
+ 00049A88: jle        __00049A9A
+ 00049A8E: push       #$00000000.L
+ 00049A94: jump       __00049AA0
+*00049A9A: push       #$00000001.L
+*00049AA0: pop        L0
+ 00049AA3: jz         __0004A241
+ 00049AA9: nop
+ 00049AAB: move       L0,#$000003E9.L
+ 00049AB2: push       L0
+ 00049AB5: atsp       L1,#$00000004.L
+ 00049ABC: clear      S1
+ 00049ABF: move       S1,S5
+ 00049AC3: clear      L0
+ 00049AC6: move       B0,S1[L1]
+ 00049ACB: push       L0
+ 00049ACE: pop        L0
+ 00049AD1: pop        L1
+ 00049AD4: push       L0
+ 00049AD7: jump       __0004A218
+*00049ADD: clear      S1
+ 00049AE0: move       S1,S2
+ 00049AE4: push       #$00000001.L
+ 00049AEA: slen       I0,S2
+ 00049AEE: comp       I0,#$0000.I
+ 00049AF3: jz         __00049B2E
+ 00049AF9: move       B0,S2[#$0000]
+ 00049AFF: and        B0,#'?'
+ 00049B03: comp       B0,#$00.B
+ 00049B07: jz         __00049B1C
+ 00049B0D: clear      S1
+ 00049B10: move       S1[#$0000],B0
+ 00049B16: spaste     S2[#$0003],S1
+*00049B1C: move       S2[#$0000],#$B8.B
+ 00049B22: push       #$00000001.L
+ 00049B28: jump       __00049B34
+*00049B2E: push       #$00000000.L
+*00049B34: pop        L1
+ 00049B37: pop        L0
+ 00049B3A: push       L1
+ 00049B3D: pop        L0
+ 00049B40: etag       __00049B61,"_TEL_AUFTRAG"
+ 00049B55: push       #$00000001.L
+ 00049B5B: jump       __00049B67
+*00049B61: push       #$00000000.L
+*00049B67: pop        L0
+ 00049B6A: jz         __00049B94
+ 00049B70: nop
+ 00049B72: clear      S1
+ 00049B75: move       S1,S2
+ 00049B79: push       #$00000001.L
+ 00049B7F: ergy       "_TEL_AUFTRAG",S1
+ 00049B91: pop        L0
+*00049B94: clear      S1
+ 00049B97: move       S1,S3
+ 00049B9B: push       #$00000001.L
+ 00049BA1: clear      S1
+ 00049BA4: move       S1,S2
+ 00049BA8: push       #$00000001.L
+ 00049BAE: clear      S1
+ 00049BB1: move       S1,S4
+ 00049BB5: push       #$00000001.L
+ 00049BBB: clear      S1
+ 00049BBE: move       S1,"_TEL_ANTWORT"
+ 00049BD0: push       #$00000001.L
+ 00049BD6: move       L0,#$00000002.L
+ 00049BDD: push       L0
+ 00049BE0: gettmr     L6
+ 00049BE3: move       BD,#$00.B
+ 00049BE7: move       BC,#$02.B
+ 00049BEB: adds       I6,#$0001.I
+*00049BF0: clear      S3
+ 00049BF3: clear      S4
+ 00049BF6: xsend      S3,S2
+ 00049BFA: slen       I3,S2
+ 00049BFE: slen       I4,S3
+ 00049C02: comp       I4,#$0000.I
+ 00049C07: jz         __00049E19
+ 00049C0D: move       S1,"_TEL_ANTWORT"
+ 00049C1F: scmp       S1,""
+ 00049C25: jz         __00049C52
+ 00049C2B: etag       __00049C52,"_TEL_ANTWORT"
+ 00049C40: ergy       "_TEL_ANTWORT",S3
+*00049C52: move       B2,#$03.B
+ 00049C56: move       I2,S3[B2]
+ 00049C5B: and        I2,#$00FF.I
+ 00049C60: adds       B2,#$01.B
+ 00049C64: move       I5,#$0001.I
+ 00049C69: adds       BA,B2
+ 00049C6D: adds       I5,I2
+ 00049C71: comp       I5,I4
+ 00049C75: jz         __00049CAA
+ 00049C7B: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_LEN"
+ 00049CA4: jump       __00049E19
+*00049CAA: move       S4,S3[B2]I2
+ 00049CB0: settmr     #$00000400.L
+ 00049CB6: tabset     "JobResult"
+ 00049CC4: jt         __00049DC2,#$0000000A.L
+ 00049CCE: comp       S3[B2],#$7F.B
+ 00049CD3: jnz        __00049D58
+ 00049CD9: move       B0,B2
+ 00049CDD: adds       B0,#$02.B
+ 00049CE1: comp       I3,#$0000.I
+ 00049CE6: jz         __00049D24
+ 00049CEC: comp       S3[B0],#'!'
+ 00049CF1: jz         __00049D08
+ 00049CF7: comp       S3[B0],#'#'
+ 00049CFC: jz         __00049D08
+ 00049D02: jump       __00049D24
+*00049D08: comp       I6,#$0001.I
+ 00049D0D: jz         __00049D19
+ 00049D13: wait       #$00000001.L
+*00049D19: subb       I6,#$0001.I
+ 00049D1E: jnz        __00049BF0
+*00049D24: fix2hex    S1,S3[B0]
+ 00049D29: tabseek    "SB",S1
+ 00049D31: tabget     S1,"STATUS_TEXT"
+ 00049D42: ergs       "JOB_STATUS",S1
+ 00049D52: jump       __00049E19
+*00049D58: comp       I3,#$0000.I
+ 00049D5D: jz         __00049DB6
+ 00049D63: move       B3,#$03.B
+ 00049D67: adds       B3,#$01.B
+ 00049D6B: move       B1,S2[B3]
+ 00049D70: adds       B1,#'@'
+ 00049D74: comp       S3[B2],B1
+ 00049D79: jz         __00049DB6
+ 00049D7F: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_RESPONSE_ID"
+ 00049DB0: jump       __00049E19
+*00049DB6: push       #$00000001.L
+ 00049DBC: jump       __00049E1F
+*00049DC2: push       #$00000000.L
+ 00049DC8: ergs       "JOB_MESSAGE","Table JobResult not found"
+ 00049DF4: ergs       "JOB_STATUS","ERROR_TABLE"
+ 00049E11: clrt
+ 00049E13: jump       __00049E1F
+*00049E19: push       #$00000000.L
+*00049E1F: settmr     L6
+ 00049E22: pop        L1
+ 00049E25: pop        L0
+ 00049E28: pop        L0
+ 00049E2B: pop        L0
+ 00049E2E: pop        L0
+ 00049E31: pop        L0
+ 00049E34: push       L1
+ 00049E37: push       #$00000000.L
+ 00049E3D: pop        L1
+ 00049E40: pop        L0
+ 00049E43: comp       L0,L1
+ 00049E47: jz         __00049E59
+ 00049E4D: push       #$00000000.L
+ 00049E53: jump       __00049E5F
+*00049E59: push       #$00000001.L
+*00049E5F: pop        L0
+ 00049E62: jz         __00049E6C
+ 00049E68: nop
+ 00049E6A: eoj
+*00049E6C: jump       __0004A23B
+*00049E72: etag       __00049E93,"_TEL_AUFTRAG"
+ 00049E87: push       #$00000001.L
+ 00049E8D: jump       __00049E99
+*00049E93: push       #$00000000.L
+*00049E99: pop        L0
+ 00049E9C: jz         __00049EC6
+ 00049EA2: nop
+ 00049EA4: clear      S1
+ 00049EA7: move       S1,S2
+ 00049EAB: push       #$00000001.L
+ 00049EB1: ergy       "_TEL_AUFTRAG",S1
+ 00049EC3: pop        L0
+*00049EC6: clear      S1
+ 00049EC9: move       S1,S3
+ 00049ECD: push       #$00000001.L
+ 00049ED3: clear      S1
+ 00049ED6: move       S1,S2
+ 00049EDA: push       #$00000001.L
+ 00049EE0: clear      S1
+ 00049EE3: move       S1,S4
+ 00049EE7: push       #$00000001.L
+ 00049EED: clear      S1
+ 00049EF0: move       S1,"_TEL_ANTWORT"
+ 00049F02: push       #$00000001.L
+ 00049F08: move       L0,#$00000002.L
+ 00049F0F: push       L0
+ 00049F12: gettmr     L6
+ 00049F15: move       BD,#$00.B
+ 00049F19: move       BC,#$02.B
+ 00049F1D: adds       I6,#$0001.I
+*00049F22: clear      S3
+ 00049F25: clear      S4
+ 00049F28: xsend      S3,S2
+ 00049F2C: slen       I3,S2
+ 00049F30: slen       I4,S3
+ 00049F34: comp       I4,#$0000.I
+ 00049F39: jz         __0004A1B9
+ 00049F3F: move       S1,"_TEL_ANTWORT"
+ 00049F51: scmp       S1,""
+ 00049F57: jz         __00049F84
+ 00049F5D: etag       __00049F84,"_TEL_ANTWORT"
+ 00049F72: ergy       "_TEL_ANTWORT",S3
+*00049F84: move       B2,#$03.B
+ 00049F88: move       B0,S3[#$0000]
+ 00049F8E: and        B0,#$C0.B
+ 00049F92: comp       B0,#$00.B
+ 00049F96: jnz        __00049FA0
+ 00049F9C: move       B2,#$01.B
+*00049FA0: move       I2,S3[#$0000]
+ 00049FA6: and        I2,#$003F.I
+ 00049FAB: comp       I2,#$0000.I
+ 00049FB0: jnz        __00049FC4
+ 00049FB6: move       I2,S3[B2]
+ 00049FBB: and        I2,#$00FF.I
+ 00049FC0: adds       B2,#$01.B
+*00049FC4: move       I5,#$0001.I
+ 00049FC9: adds       BA,B2
+ 00049FCD: adds       I5,I2
+ 00049FD1: comp       I5,I4
+ 00049FD5: jz         __0004A00A
+ 00049FDB: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_LEN"
+ 0004A004: jump       __0004A1B9
+*0004A00A: move       S4,S3[B2]I2
+ 0004A010: settmr     #$00000400.L
+ 0004A016: tabset     "JobResult"
+ 0004A024: jt         __0004A162,#$0000000A.L
+ 0004A02E: comp       S3[B2],#$7F.B
+ 0004A033: jnz        __0004A0CC
+ 0004A039: move       B0,B2
+ 0004A03D: adds       B0,#$02.B
+ 0004A041: comp       I3,#$0000.I
+ 0004A046: jz         __0004A098
+ 0004A04C: move       BE,S2[#$0000]
+ 0004A052: and        BE,#$C0.B
+ 0004A056: comp       BE,#$C0.B
+ 0004A05A: jz         __0004A098
+ 0004A060: comp       S3[B0],#'!'
+ 0004A065: jz         __0004A07C
+ 0004A06B: comp       S3[B0],#'#'
+ 0004A070: jz         __0004A07C
+ 0004A076: jump       __0004A098
+*0004A07C: comp       I6,#$0001.I
+ 0004A081: jz         __0004A08D
+ 0004A087: wait       #$00000001.L
+*0004A08D: subb       I6,#$0001.I
+ 0004A092: jnz        __00049F22
+*0004A098: fix2hex    S1,S3[B0]
+ 0004A09D: tabseek    "SB",S1
+ 0004A0A5: tabget     S1,"STATUS_TEXT"
+ 0004A0B6: ergs       "JOB_STATUS",S1
+ 0004A0C6: jump       __0004A1B9
+*0004A0CC: comp       I3,#$0000.I
+ 0004A0D1: jz         __0004A156
+ 0004A0D7: move       B3,#$03.B
+ 0004A0DB: move       B0,S2[#$0000]
+ 0004A0E1: and        B0,#$C0.B
+ 0004A0E5: comp       B0,#$00.B
+ 0004A0E9: jnz        __0004A0F3
+ 0004A0EF: move       B3,#$01.B
+*0004A0F3: move       B0,S2[#$0000]
+ 0004A0F9: and        B0,#'?'
+ 0004A0FD: comp       B0,#$00.B
+ 0004A101: jnz        __0004A10B
+ 0004A107: adds       B3,#$01.B
+*0004A10B: move       B1,S2[B3]
+ 0004A110: adds       B1,#'@'
+ 0004A114: comp       S3[B2],B1
+ 0004A119: jz         __0004A156
+ 0004A11F: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_RESPONSE_ID"
+ 0004A150: jump       __0004A1B9
+*0004A156: push       #$00000001.L
+ 0004A15C: jump       __0004A1BF
+*0004A162: push       #$00000000.L
+ 0004A168: ergs       "JOB_MESSAGE","Table JobResult not found"
+ 0004A194: ergs       "JOB_STATUS","ERROR_TABLE"
+ 0004A1B1: clrt
+ 0004A1B3: jump       __0004A1BF
+*0004A1B9: push       #$00000000.L
+*0004A1BF: settmr     L6
+ 0004A1C2: pop        L1
+ 0004A1C5: pop        L0
+ 0004A1C8: pop        L0
+ 0004A1CB: pop        L0
+ 0004A1CE: pop        L0
+ 0004A1D1: pop        L0
+ 0004A1D4: push       L1
+ 0004A1D7: push       #$00000000.L
+ 0004A1DD: pop        L1
+ 0004A1E0: pop        L0
+ 0004A1E3: comp       L0,L1
+ 0004A1E7: jz         __0004A1F9
+ 0004A1ED: push       #$00000000.L
+ 0004A1F3: jump       __0004A1FF
+*0004A1F9: push       #$00000001.L
+*0004A1FF: pop        L0
+ 0004A202: jz         __0004A20C
+ 0004A208: nop
+ 0004A20A: eoj
+*0004A20C: jump       __0004A23B
+ 0004A212: jump       __0004A23B
+*0004A218: pop        L0
+ 0004A21B: comp       L0,#$0000000D.L
+ 0004A222: jz         __00049ADD
+ 0004A228: comp       L0,#$00000006.L
+ 0004A22F: jz         __00049ADD
+ 0004A235: jump       __00049E72
+*0004A23B: jump       __0004B135
+*0004A241: time       S1
+ 0004A244: move       L0,#$00000000.L
+ 0004A24B: move       B0,S1[#$0000]
+ 0004A251: mult       L0,#$00000E10.L
+ 0004A258: move       L1,#$00000000.L
+ 0004A25F: move       B4,S1[#$0001]
+ 0004A265: mult       L1,#$0000003C.L
+ 0004A26C: move       L2,#$00000000.L
+ 0004A273: move       B8,S1[#$0002]
+ 0004A279: move       L3,L2
+ 0004A27D: adds       L3,L1
+ 0004A281: adds       L3,L0
+ 0004A285: date       S1
+ 0004A288: move       L0,#$00000000.L
+ 0004A28F: move       B0,S1[#$0000]
+ 0004A295: move       L1,#$00000000.L
+ 0004A29C: comp       S1[#$0001],#$01.B
+ 0004A2A2: jnz        __0004A2B5
+ 0004A2A8: move       L1,#$00000000.L
+ 0004A2AF: jump       __0004A3C8
+*0004A2B5: comp       S1[#$0001],#$02.B
+ 0004A2BB: jnz        __0004A2CE
+ 0004A2C1: move       L1,#$0000001F.L
+ 0004A2C8: jump       __0004A3C8
+*0004A2CE: comp       S1[#$0001],#$03.B
+ 0004A2D4: jnz        __0004A2E7
+ 0004A2DA: move       L1,#$0000003B.L
+ 0004A2E1: jump       __0004A3C8
+*0004A2E7: comp       S1[#$0001],#$04.B
+ 0004A2ED: jnz        __0004A300
+ 0004A2F3: move       L1,#$0000005A.L
+ 0004A2FA: jump       __0004A3C8
+*0004A300: comp       S1[#$0001],#$05.B
+ 0004A306: jnz        __0004A319
+ 0004A30C: move       L1,#$00000078.L
+ 0004A313: jump       __0004A3C8
+*0004A319: comp       S1[#$0001],#$06.B
+ 0004A31F: jnz        __0004A332
+ 0004A325: move       L1,#$00000097.L
+ 0004A32C: jump       __0004A3C8
+*0004A332: comp       S1[#$0001],#$07.B
+ 0004A338: jnz        __0004A34B
+ 0004A33E: move       L1,#$000000B5.L
+ 0004A345: jump       __0004A3C8
+*0004A34B: comp       S1[#$0001],#$08.B
+ 0004A351: jnz        __0004A364
+ 0004A357: move       L1,#$000000D4.L
+ 0004A35E: jump       __0004A3C8
+*0004A364: comp       S1[#$0001],#'\t'
+ 0004A36A: jnz        __0004A37D
+ 0004A370: move       L1,#$000000F3.L
+ 0004A377: jump       __0004A3C8
+*0004A37D: comp       S1[#$0001],#'\n'
+ 0004A383: jnz        __0004A396
+ 0004A389: move       L1,#$00000111.L
+ 0004A390: jump       __0004A3C8
+*0004A396: comp       S1[#$0001],#$0B.B
+ 0004A39C: jnz        __0004A3AF
+ 0004A3A2: move       L1,#$00000130.L
+ 0004A3A9: jump       __0004A3C8
+*0004A3AF: comp       S1[#$0001],#$0C.B
+ 0004A3B5: jnz        __0004A3C8
+ 0004A3BB: move       L1,#$0000014E.L
+ 0004A3C2: jump       __0004A3C8
+*0004A3C8: move       L2,#$00000000.L
+ 0004A3CF: move       B8,S1[#$0002]
+ 0004A3D5: and        B8,#$0F.B
+ 0004A3D9: move       A0,B8
+ 0004A3DD: mult       L2,#$0000016D.L
+ 0004A3E4: comp       A0,#$00.B
+ 0004A3E8: jz         __0004A412
+ 0004A3EE: comp       A0,#$04.B
+ 0004A3F2: jz         __0004A412
+ 0004A3F8: comp       A0,#$08.B
+ 0004A3FC: jz         __0004A412
+ 0004A402: comp       A0,#$0C.B
+ 0004A406: jz         __0004A412
+ 0004A40C: jump       __0004A419
+*0004A412: adds       L2,#$00000001.L
+*0004A419: move       L4,L0
+ 0004A41D: adds       L4,L1
+ 0004A421: adds       L4,L2
+ 0004A425: mult       L4,#$00015180.L
+ 0004A42C: adds       L3,L4
+ 0004A430: push       L3
+ 0004A433: pop        L1
+ 0004A436: push       L1
+ 0004A439: move       L0,S0[#$0000]
+ 0004A43F: push       L0
+ 0004A442: pop        L1
+ 0004A445: pop        L0
+ 0004A448: adds       L0,L1
+ 0004A44C: push       L0
+ 0004A44F: move       L0,#$00000001.L
+ 0004A456: push       L0
+ 0004A459: pop        L1
+ 0004A45C: pop        L0
+ 0004A45F: adds       L0,L1
+ 0004A463: push       L0
+ 0004A466: atsp       L0,#$00000004.L
+ 0004A46D: move       S0[#$0000],B0
+ 0004A473: move       S0[#$0001],B1
+ 0004A479: move       S0[#$0002],B2
+ 0004A47F: move       S0[#$0003],B3
+ 0004A485: pop        L0
+ 0004A488: move       L0,#$000003E9.L
+ 0004A48F: push       L0
+ 0004A492: atsp       L1,#$00000004.L
+ 0004A499: clear      S1
+ 0004A49C: move       S1,S5
+ 0004A4A0: clear      L0
+ 0004A4A3: move       B0,S1[L1]
+ 0004A4A8: push       L0
+ 0004A4AB: pop        L0
+ 0004A4AE: pop        L1
+ 0004A4B1: push       L0
+ 0004A4B4: jump       __0004A52F
+*0004A4BA: clear      S1
+ 0004A4BD: move       S1,S2
+ 0004A4C1: push       #$00000001.L
+ 0004A4C7: slen       I0,S2
+ 0004A4CB: comp       I0,#$0000.I
+ 0004A4D0: jz         __0004A50B
+ 0004A4D6: move       B0,S2[#$0000]
+ 0004A4DC: and        B0,#'?'
+ 0004A4E0: comp       B0,#$00.B
+ 0004A4E4: jz         __0004A4F9
+ 0004A4EA: clear      S1
+ 0004A4ED: move       S1[#$0000],B0
+ 0004A4F3: spaste     S2[#$0003],S1
+*0004A4F9: move       S2[#$0000],#$B8.B
+ 0004A4FF: push       #$00000001.L
+ 0004A505: jump       __0004A511
+*0004A50B: push       #$00000000.L
+*0004A511: pop        L1
+ 0004A514: pop        L0
+ 0004A517: push       L1
+ 0004A51A: pop        L0
+ 0004A51D: jump       __0004A552
+*0004A523: jump       __0004A552
+ 0004A529: jump       __0004A552
+*0004A52F: pop        L0
+ 0004A532: comp       L0,#$0000000D.L
+ 0004A539: jz         __0004A4BA
+ 0004A53F: comp       L0,#$00000006.L
+ 0004A546: jz         __0004A4BA
+ 0004A54C: jump       __0004A523
+*0004A552: etag       __0004A573,"_TEL_AUFTRAG"
+ 0004A567: push       #$00000001.L
+ 0004A56D: jump       __0004A579
+*0004A573: push       #$00000000.L
+*0004A579: pop        L0
+ 0004A57C: jz         __0004A5A6
+ 0004A582: nop
+ 0004A584: clear      S1
+ 0004A587: move       S1,S2
+ 0004A58B: push       #$00000001.L
+ 0004A591: ergy       "_TEL_AUFTRAG",S1
+ 0004A5A3: pop        L0
+*0004A5A6: move       L0,#$000003E9.L
+ 0004A5AD: push       L0
+ 0004A5B0: atsp       L1,#$00000004.L
+ 0004A5B7: clear      S1
+ 0004A5BA: move       S1,S5
+ 0004A5BE: clear      L0
+ 0004A5C1: move       B0,S1[L1]
+ 0004A5C6: push       L0
+ 0004A5C9: pop        L0
+ 0004A5CC: pop        L1
+ 0004A5CF: push       L0
+ 0004A5D2: jump       __0004ABE2
+*0004A5D8: clear      S1
+ 0004A5DB: move       S1,S3
+ 0004A5DF: push       #$00000001.L
+ 0004A5E5: clear      S1
+ 0004A5E8: move       S1,S2
+ 0004A5EC: push       #$00000001.L
+ 0004A5F2: clear      S1
+ 0004A5F5: move       S1,S4
+ 0004A5F9: push       #$00000001.L
+ 0004A5FF: clear      S1
+ 0004A602: move       S1,"_TEL_ANTWORT"
+ 0004A614: push       #$00000001.L
+ 0004A61A: move       L0,#$00000000.L
+ 0004A621: push       L0
+ 0004A624: gettmr     L6
+ 0004A627: move       BD,#$00.B
+ 0004A62B: move       BC,#$00.B
+ 0004A62F: adds       I6,#$0001.I
+*0004A634: clear      S3
+ 0004A637: clear      S4
+ 0004A63A: xsend      S3,S2
+ 0004A63E: slen       I3,S2
+ 0004A642: slen       I4,S3
+ 0004A646: comp       I4,#$0000.I
+ 0004A64B: jz         __0004A85D
+ 0004A651: move       S1,"_TEL_ANTWORT"
+ 0004A663: scmp       S1,""
+ 0004A669: jz         __0004A696
+ 0004A66F: etag       __0004A696,"_TEL_ANTWORT"
+ 0004A684: ergy       "_TEL_ANTWORT",S3
+*0004A696: move       B2,#$03.B
+ 0004A69A: move       I2,S3[B2]
+ 0004A69F: and        I2,#$00FF.I
+ 0004A6A4: adds       B2,#$01.B
+ 0004A6A8: move       I5,#$0001.I
+ 0004A6AD: adds       BA,B2
+ 0004A6B1: adds       I5,I2
+ 0004A6B5: comp       I5,I4
+ 0004A6B9: jz         __0004A6EE
+ 0004A6BF: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_LEN"
+ 0004A6E8: jump       __0004A85D
+*0004A6EE: move       S4,S3[B2]I2
+ 0004A6F4: settmr     #$00000400.L
+ 0004A6FA: tabset     "JobResult"
+ 0004A708: jt         __0004A806,#$0000000A.L
+ 0004A712: comp       S3[B2],#$7F.B
+ 0004A717: jnz        __0004A79C
+ 0004A71D: move       B0,B2
+ 0004A721: adds       B0,#$02.B
+ 0004A725: comp       I3,#$0000.I
+ 0004A72A: jz         __0004A768
+ 0004A730: comp       S3[B0],#'!'
+ 0004A735: jz         __0004A74C
+ 0004A73B: comp       S3[B0],#'#'
+ 0004A740: jz         __0004A74C
+ 0004A746: jump       __0004A768
+*0004A74C: comp       I6,#$0001.I
+ 0004A751: jz         __0004A75D
+ 0004A757: wait       #$00000001.L
+*0004A75D: subb       I6,#$0001.I
+ 0004A762: jnz        __0004A634
+*0004A768: fix2hex    S1,S3[B0]
+ 0004A76D: tabseek    "SB",S1
+ 0004A775: tabget     S1,"STATUS_TEXT"
+ 0004A786: ergs       "JOB_STATUS",S1
+ 0004A796: jump       __0004A85D
+*0004A79C: comp       I3,#$0000.I
+ 0004A7A1: jz         __0004A7FA
+ 0004A7A7: move       B3,#$03.B
+ 0004A7AB: adds       B3,#$01.B
+ 0004A7AF: move       B1,S2[B3]
+ 0004A7B4: adds       B1,#'@'
+ 0004A7B8: comp       S3[B2],B1
+ 0004A7BD: jz         __0004A7FA
+ 0004A7C3: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_RESPONSE_ID"
+ 0004A7F4: jump       __0004A85D
+*0004A7FA: push       #$00000001.L
+ 0004A800: jump       __0004A863
+*0004A806: push       #$00000000.L
+ 0004A80C: ergs       "JOB_MESSAGE","Table JobResult not found"
+ 0004A838: ergs       "JOB_STATUS","ERROR_TABLE"
+ 0004A855: clrt
+ 0004A857: jump       __0004A863
+*0004A85D: push       #$00000000.L
+*0004A863: settmr     L6
+ 0004A866: pop        L1
+ 0004A869: pop        L0
+ 0004A86C: pop        L0
+ 0004A86F: pop        L0
+ 0004A872: pop        L0
+ 0004A875: pop        L0
+ 0004A878: push       L1
+ 0004A87B: atsp       L0,#$00000004.L
+ 0004A882: move       S0[#$0008],B0
+ 0004A888: move       S0[#$0009],B1
+ 0004A88E: move       S0[#$000A],B2
+ 0004A894: move       S0[#$000B],B3
+ 0004A89A: pop        L0
+ 0004A89D: jump       __0004AC05
+*0004A8A3: clear      S1
+ 0004A8A6: move       S1,S3
+ 0004A8AA: push       #$00000001.L
+ 0004A8B0: clear      S1
+ 0004A8B3: move       S1,S2
+ 0004A8B7: push       #$00000001.L
+ 0004A8BD: clear      S1
+ 0004A8C0: move       S1,S4
+ 0004A8C4: push       #$00000001.L
+ 0004A8CA: clear      S1
+ 0004A8CD: move       S1,"_TEL_ANTWORT"
+ 0004A8DF: push       #$00000001.L
+ 0004A8E5: move       L0,#$00000000.L
+ 0004A8EC: push       L0
+ 0004A8EF: gettmr     L6
+ 0004A8F2: move       BD,#$00.B
+ 0004A8F6: move       BC,#$00.B
+ 0004A8FA: adds       I6,#$0001.I
+*0004A8FF: clear      S3
+ 0004A902: clear      S4
+ 0004A905: xsend      S3,S2
+ 0004A909: slen       I3,S2
+ 0004A90D: slen       I4,S3
+ 0004A911: comp       I4,#$0000.I
+ 0004A916: jz         __0004AB96
+ 0004A91C: move       S1,"_TEL_ANTWORT"
+ 0004A92E: scmp       S1,""
+ 0004A934: jz         __0004A961
+ 0004A93A: etag       __0004A961,"_TEL_ANTWORT"
+ 0004A94F: ergy       "_TEL_ANTWORT",S3
+*0004A961: move       B2,#$03.B
+ 0004A965: move       B0,S3[#$0000]
+ 0004A96B: and        B0,#$C0.B
+ 0004A96F: comp       B0,#$00.B
+ 0004A973: jnz        __0004A97D
+ 0004A979: move       B2,#$01.B
+*0004A97D: move       I2,S3[#$0000]
+ 0004A983: and        I2,#$003F.I
+ 0004A988: comp       I2,#$0000.I
+ 0004A98D: jnz        __0004A9A1
+ 0004A993: move       I2,S3[B2]
+ 0004A998: and        I2,#$00FF.I
+ 0004A99D: adds       B2,#$01.B
+*0004A9A1: move       I5,#$0001.I
+ 0004A9A6: adds       BA,B2
+ 0004A9AA: adds       I5,I2
+ 0004A9AE: comp       I5,I4
+ 0004A9B2: jz         __0004A9E7
+ 0004A9B8: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_LEN"
+ 0004A9E1: jump       __0004AB96
+*0004A9E7: move       S4,S3[B2]I2
+ 0004A9ED: settmr     #$00000400.L
+ 0004A9F3: tabset     "JobResult"
+ 0004AA01: jt         __0004AB3F,#$0000000A.L
+ 0004AA0B: comp       S3[B2],#$7F.B
+ 0004AA10: jnz        __0004AAA9
+ 0004AA16: move       B0,B2
+ 0004AA1A: adds       B0,#$02.B
+ 0004AA1E: comp       I3,#$0000.I
+ 0004AA23: jz         __0004AA75
+ 0004AA29: move       BE,S2[#$0000]
+ 0004AA2F: and        BE,#$C0.B
+ 0004AA33: comp       BE,#$C0.B
+ 0004AA37: jz         __0004AA75
+ 0004AA3D: comp       S3[B0],#'!'
+ 0004AA42: jz         __0004AA59
+ 0004AA48: comp       S3[B0],#'#'
+ 0004AA4D: jz         __0004AA59
+ 0004AA53: jump       __0004AA75
+*0004AA59: comp       I6,#$0001.I
+ 0004AA5E: jz         __0004AA6A
+ 0004AA64: wait       #$00000001.L
+*0004AA6A: subb       I6,#$0001.I
+ 0004AA6F: jnz        __0004A8FF
+*0004AA75: fix2hex    S1,S3[B0]
+ 0004AA7A: tabseek    "SB",S1
+ 0004AA82: tabget     S1,"STATUS_TEXT"
+ 0004AA93: ergs       "JOB_STATUS",S1
+ 0004AAA3: jump       __0004AB96
+*0004AAA9: comp       I3,#$0000.I
+ 0004AAAE: jz         __0004AB33
+ 0004AAB4: move       B3,#$03.B
+ 0004AAB8: move       B0,S2[#$0000]
+ 0004AABE: and        B0,#$C0.B
+ 0004AAC2: comp       B0,#$00.B
+ 0004AAC6: jnz        __0004AAD0
+ 0004AACC: move       B3,#$01.B
+*0004AAD0: move       B0,S2[#$0000]
+ 0004AAD6: and        B0,#'?'
+ 0004AADA: comp       B0,#$00.B
+ 0004AADE: jnz        __0004AAE8
+ 0004AAE4: adds       B3,#$01.B
+*0004AAE8: move       B1,S2[B3]
+ 0004AAED: adds       B1,#'@'
+ 0004AAF1: comp       S3[B2],B1
+ 0004AAF6: jz         __0004AB33
+ 0004AAFC: ergs       "JOB_STATUS","ERROR_ECU_INCORRECT_RESPONSE_ID"
+ 0004AB2D: jump       __0004AB96
+*0004AB33: push       #$00000001.L
+ 0004AB39: jump       __0004AB9C
+*0004AB3F: push       #$00000000.L
+ 0004AB45: ergs       "JOB_MESSAGE","Table JobResult not found"
+ 0004AB71: ergs       "JOB_STATUS","ERROR_TABLE"
+ 0004AB8E: clrt
+ 0004AB90: jump       __0004AB9C
+*0004AB96: push       #$00000000.L
+*0004AB9C: settmr     L6
+ 0004AB9F: pop        L1
+ 0004ABA2: pop        L0
+ 0004ABA5: pop        L0
+ 0004ABA8: pop        L0
+ 0004ABAB: pop        L0
+ 0004ABAE: pop        L0
+ 0004ABB1: push       L1
+ 0004ABB4: atsp       L0,#$00000004.L
+ 0004ABBB: move       S0[#$0008],B0
+ 0004ABC1: move       S0[#$0009],B1
+ 0004ABC7: move       S0[#$000A],B2
+ 0004ABCD: move       S0[#$000B],B3
+ 0004ABD3: pop        L0
+ 0004ABD6: jump       __0004AC05
+ 0004ABDC: jump       __0004AC05
+*0004ABE2: pop        L0
+ 0004ABE5: comp       L0,#$0000000D.L
+ 0004ABEC: jz         __0004A5D8
+ 0004ABF2: comp       L0,#$00000006.L
+ 0004ABF9: jz         __0004A5D8
+ 0004ABFF: jump       __0004A8A3
+*0004AC05: move       L0,S0[#$0008]
+ 0004AC0B: push       L0
+ 0004AC0E: pop        L0
+ 0004AC11: jz         __0004AC1F
+ 0004AC17: nop
+ 0004AC19: jump       __0004B058
+*0004AC1F: clear      S1
+ 0004AC22: move       S1,S4
+ 0004AC26: push       #$00000001.L
+ 0004AC2C: slen       L0,S4
+ 0004AC30: push       L0
+ 0004AC33: pop        L1
+ 0004AC36: pop        L0
+ 0004AC39: push       L1
+ 0004AC3C: move       L0,#$00000000.L
+ 0004AC43: push       L0
+ 0004AC46: pop        L1
+ 0004AC49: pop        L0
+ 0004AC4C: comp       L0,L1
+ 0004AC50: jnz        __0004AC62
+ 0004AC56: push       #$00000000.L
+ 0004AC5C: jump       __0004AC68
+*0004AC62: push       #$00000001.L
+*0004AC68: move       L0,#$00000002.L
+ 0004AC6F: push       L0
+ 0004AC72: atsp       L1,#$00000004.L
+ 0004AC79: clear      S1
+ 0004AC7C: move       S1,S4
+ 0004AC80: clear      L0
+ 0004AC83: move       B0,S1[L1]
+ 0004AC88: push       L0
+ 0004AC8B: pop        L0
+ 0004AC8E: pop        L1
+ 0004AC91: push       L0
+ 0004AC94: move       L0,#$00000023.L
+ 0004AC9B: push       L0
+ 0004AC9E: pop        L1
+ 0004ACA1: pop        L0
+ 0004ACA4: comp       L0,L1
+ 0004ACA8: jnz        __0004ACBA
+ 0004ACAE: push       #$00000000.L
+ 0004ACB4: jump       __0004ACC0
+*0004ACBA: push       #$00000001.L
+*0004ACC0: pop        L1
+ 0004ACC3: pop        L0
+ 0004ACC6: and        L0,L1
+ 0004ACCA: push       L0
+ 0004ACCD: push       #$00000000.L
+ 0004ACD3: pop        L1
+ 0004ACD6: pop        L0
+ 0004ACD9: comp       L0,L1
+ 0004ACDD: jnz        __0004ACEF
+ 0004ACE3: push       #$00000000.L
+ 0004ACE9: jump       __0004ACF5
+*0004ACEF: push       #$00000001.L
+*0004ACF5: move       L0,#$00000002.L
+ 0004ACFC: push       L0
+ 0004ACFF: atsp       L1,#$00000004.L
+ 0004AD06: clear      S1
+ 0004AD09: move       S1,S4
+ 0004AD0D: clear      L0
+ 0004AD10: move       B0,S1[L1]
+ 0004AD15: push       L0
+ 0004AD18: pop        L0
+ 0004AD1B: pop        L1
+ 0004AD1E: push       L0
+ 0004AD21: move       L0,#$00000021.L
+ 0004AD28: push       L0
+ 0004AD2B: pop        L1
+ 0004AD2E: pop        L0
+ 0004AD31: comp       L0,L1
+ 0004AD35: jnz        __0004AD47
+ 0004AD3B: push       #$00000000.L
+ 0004AD41: jump       __0004AD4D
+*0004AD47: push       #$00000001.L
+*0004AD4D: pop        L1
+ 0004AD50: pop        L0
+ 0004AD53: and        L0,L1
+ 0004AD57: push       L0
+ 0004AD5A: push       #$00000000.L
+ 0004AD60: pop        L1
+ 0004AD63: pop        L0
+ 0004AD66: comp       L0,L1
+ 0004AD6A: jnz        __0004AD7C
+ 0004AD70: push       #$00000000.L
+ 0004AD76: jump       __0004AD82
+*0004AD7C: push       #$00000001.L
+*0004AD82: pop        L0
+ 0004AD85: jz         __0004AD8F
+ 0004AD8B: nop
+ 0004AD8D: eoj
+*0004AD8F: move       L0,#$00080000.L
+ 0004AD96: push       L0
+ 0004AD99: move       L0,#$00080000.L
+ 0004ADA0: gettmr     L1
+ 0004ADA3: settmr     L0
+ 0004ADA6: push       L1
+ 0004ADA9: pop        L1
+ 0004ADAC: pop        L0
+ 0004ADAF: push       L1
+ 0004ADB2: pop        L0
+ 0004ADB5: move       L0,S0[#$0004]
+ 0004ADBB: push       L0
+ 0004ADBE: atsp       L2,#$00000004.L
+ 0004ADC5: move       L0,L2
+ 0004ADC9: wait       I0
+ 0004ADCC: push       #$00000001.L
+ 0004ADD2: pop        L1
+ 0004ADD5: move       L0,L2
+ 0004ADD9: move       S0[#$0004],B0
+ 0004ADDF: move       S0[#$0005],B1
+ 0004ADE5: move       S0[#$0006],B2
+ 0004ADEB: move       S0[#$0007],B3
+ 0004ADF1: pop        L0
+ 0004ADF4: push       L1
+ 0004ADF7: pop        L0
+ 0004ADFA: move       L0,#$00000001.L
+ 0004AE01: push       L0
+ 0004AE04: atsp       L0,#$00000004.L
+ 0004AE0B: move       S0[#$0004],B0
+ 0004AE11: move       S0[#$0005],B1
+ 0004AE17: move       S0[#$0006],B2
+ 0004AE1D: move       S0[#$0007],B3
+ 0004AE23: pop        L0
+ 0004AE26: move       L0,S0[#$0000]
+ 0004AE2C: push       L0
+ 0004AE2F: time       S1
+ 0004AE32: move       L0,#$00000000.L
+ 0004AE39: move       B0,S1[#$0000]
+ 0004AE3F: mult       L0,#$00000E10.L
+ 0004AE46: move       L1,#$00000000.L
+ 0004AE4D: move       B4,S1[#$0001]
+ 0004AE53: mult       L1,#$0000003C.L
+ 0004AE5A: move       L2,#$00000000.L
+ 0004AE61: move       B8,S1[#$0002]
+ 0004AE67: move       L3,L2
+ 0004AE6B: adds       L3,L1
+ 0004AE6F: adds       L3,L0
+ 0004AE73: date       S1
+ 0004AE76: move       L0,#$00000000.L
+ 0004AE7D: move       B0,S1[#$0000]
+ 0004AE83: move       L1,#$00000000.L
+ 0004AE8A: comp       S1[#$0001],#$01.B
+ 0004AE90: jnz        __0004AEA3
+ 0004AE96: move       L1,#$00000000.L
+ 0004AE9D: jump       __0004AFB6
+*0004AEA3: comp       S1[#$0001],#$02.B
+ 0004AEA9: jnz        __0004AEBC
+ 0004AEAF: move       L1,#$0000001F.L
+ 0004AEB6: jump       __0004AFB6
+*0004AEBC: comp       S1[#$0001],#$03.B
+ 0004AEC2: jnz        __0004AED5
+ 0004AEC8: move       L1,#$0000003B.L
+ 0004AECF: jump       __0004AFB6
+*0004AED5: comp       S1[#$0001],#$04.B
+ 0004AEDB: jnz        __0004AEEE
+ 0004AEE1: move       L1,#$0000005A.L
+ 0004AEE8: jump       __0004AFB6
+*0004AEEE: comp       S1[#$0001],#$05.B
+ 0004AEF4: jnz        __0004AF07
+ 0004AEFA: move       L1,#$00000078.L
+ 0004AF01: jump       __0004AFB6
+*0004AF07: comp       S1[#$0001],#$06.B
+ 0004AF0D: jnz        __0004AF20
+ 0004AF13: move       L1,#$00000097.L
+ 0004AF1A: jump       __0004AFB6
+*0004AF20: comp       S1[#$0001],#$07.B
+ 0004AF26: jnz        __0004AF39
+ 0004AF2C: move       L1,#$000000B5.L
+ 0004AF33: jump       __0004AFB6
+*0004AF39: comp       S1[#$0001],#$08.B
+ 0004AF3F: jnz        __0004AF52
+ 0004AF45: move       L1,#$000000D4.L
+ 0004AF4C: jump       __0004AFB6
+*0004AF52: comp       S1[#$0001],#'\t'
+ 0004AF58: jnz        __0004AF6B
+ 0004AF5E: move       L1,#$000000F3.L
+ 0004AF65: jump       __0004AFB6
+*0004AF6B: comp       S1[#$0001],#'\n'
+ 0004AF71: jnz        __0004AF84
+ 0004AF77: move       L1,#$00000111.L
+ 0004AF7E: jump       __0004AFB6
+*0004AF84: comp       S1[#$0001],#$0B.B
+ 0004AF8A: jnz        __0004AF9D
+ 0004AF90: move       L1,#$00000130.L
+ 0004AF97: jump       __0004AFB6
+*0004AF9D: comp       S1[#$0001],#$0C.B
+ 0004AFA3: jnz        __0004AFB6
+ 0004AFA9: move       L1,#$0000014E.L
+ 0004AFB0: jump       __0004AFB6
+*0004AFB6: move       L2,#$00000000.L
+ 0004AFBD: move       B8,S1[#$0002]
+ 0004AFC3: and        B8,#$0F.B
+ 0004AFC7: move       A0,B8
+ 0004AFCB: mult       L2,#$0000016D.L
+ 0004AFD2: comp       A0,#$00.B
+ 0004AFD6: jz         __0004B000
+ 0004AFDC: comp       A0,#$04.B
+ 0004AFE0: jz         __0004B000
+ 0004AFE6: comp       A0,#$08.B
+ 0004AFEA: jz         __0004B000
+ 0004AFF0: comp       A0,#$0C.B
+ 0004AFF4: jz         __0004B000
+ 0004AFFA: jump       __0004B007
+*0004B000: adds       L2,#$00000001.L
+*0004B007: move       L4,L0
+ 0004B00B: adds       L4,L1
+ 0004B00F: adds       L4,L2
+ 0004B013: mult       L4,#$00015180.L
+ 0004B01A: adds       L3,L4
+ 0004B01E: push       L3
+ 0004B021: pop        L1
+ 0004B024: push       L1
+ 0004B027: pop        L1
+ 0004B02A: pop        L0
+ 0004B02D: comp       L0,L1
+ 0004B031: jg         __0004B043
+ 0004B037: push       #$00000000.L
+ 0004B03D: jump       __0004B049
+*0004B043: push       #$00000001.L
+*0004B049: pop        L0
+ 0004B04C: jz         __0004B058
+ 0004B052: jump       __0004A5A6
+*0004B058: clear      S1
+ 0004B05B: move       S1,S4
+ 0004B05F: push       #$00000001.L
+ 0004B065: slen       L0,S4
+ 0004B069: push       L0
+ 0004B06C: pop        L1
+ 0004B06F: pop        L0
+ 0004B072: push       L1
+ 0004B075: move       L0,#$00000000.L
+ 0004B07C: push       L0
+ 0004B07F: pop        L1
+ 0004B082: pop        L0
+ 0004B085: comp       L0,L1
+ 0004B089: jz         __0004B09B
+ 0004B08F: push       #$00000000.L
+ 0004B095: jump       __0004B0A1
+*0004B09B: push       #$00000001.L
+*0004B0A1: pop        L0
+ 0004B0A4: jz         __0004B0D0
+ 0004B0AA: nop
+ 0004B0AC: move       L0,#$00000013.L
+ 0004B0B3: push       L0
+ 0004B0B6: sett       #$00000013.L
+ 0004B0BC: eerr
+ 0004B0BE: push       #$00000001.L
+ 0004B0C4: pop        L1
+ 0004B0C7: pop        L0
+ 0004B0CA: push       L1
+ 0004B0CD: pop        L0
+*0004B0D0: move       L0,#$00000000.L
+ 0004B0D7: push       L0
+ 0004B0DA: atsp       L1,#$00000004.L
+ 0004B0E1: clear      S1
+ 0004B0E4: move       S1,S4
+ 0004B0E8: clear      L0
+ 0004B0EB: move       B0,S1[L1]
+ 0004B0F0: push       L0
+ 0004B0F3: pop        L0
+ 0004B0F6: pop        L1
+ 0004B0F9: push       L0
+ 0004B0FC: move       L0,#$0000007F.L
+ 0004B103: push       L0
+ 0004B106: pop        L1
+ 0004B109: pop        L0
+ 0004B10C: comp       L0,L1
+ 0004B110: jz         __0004B122
+ 0004B116: push       #$00000000.L
+ 0004B11C: jump       __0004B128
+*0004B122: push       #$00000001.L
+*0004B128: pop        L0
+ 0004B12B: jz         __0004B135
+ 0004B131: nop
+ 0004B133: eoj
+*0004B135: etag       __0004B15F,"FLASH_LOESCHEN_STATUS"
+ 0004B153: push       #$00000001.L
+ 0004B159: jump       __0004B165
+*0004B15F: push       #$00000000.L
+*0004B165: pop        L0
+ 0004B168: jz         __0004B1C1
+ 0004B16E: nop
+ 0004B170: move       L0,#$00000002.L
+ 0004B177: push       L0
+ 0004B17A: atsp       L1,#$00000004.L
+ 0004B181: clear      S1
+ 0004B184: move       S1,S4
+ 0004B188: clear      L0
+ 0004B18B: move       B0,S1[L1]
+ 0004B190: push       L0
+ 0004B193: pop        L0
+ 0004B196: pop        L1
+ 0004B199: push       L0
+ 0004B19C: atsp       L0,#$00000004.L
+ 0004B1A3: ergi       "FLASH_LOESCHEN_STATUS",I0
+ 0004B1BE: pop        L0
+*0004B1C1: clear      S1
+ 0004B1C4: move       S1,"OKAY"
+ 0004B1CE: push       #$00000001.L
+ 0004B1D4: ergs       "JOB_STATUS",S1
+ 0004B1E4: pop        L0
+ 0004B1E7: eoj
+ 0004B1E9: eoj

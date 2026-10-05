@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────
+#  Проприетарные образы BMW / SP-Daten — НЕ публикуются.
+#  Кладите свои копии в local-firmware/ и сверяйте по манифесту:
+#      python tools/check-firmware.py
+# ─────────────────────────────────────────────────────────────
+local-firmware/
+*.0pa
+*.0ba
+*.0pr
+*.0da
+*.prg
+*.ipo
+*.DAT
+*.HIS
+*.HWH
+*.bin
+*.hex
+
+# Документация производителей (копирайт) — тоже локально
+docs/vendor/
+
+# ── сборка и мусор ──
+__pycache__/
+*.py[cod]
+.pio/
+.vscode/
+.idea/
+*.egg-info/
+.venv/
+venv/
+
+# ── результаты прогонов ──
+*.manifest.json
+!firmware-manifest.json
+dumps/
+*.log
+
+# ── macOS / Windows ──
+.DS_Store
+Thumbs.db
+desktop.ini
