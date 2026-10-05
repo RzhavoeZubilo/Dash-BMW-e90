@@ -62,6 +62,8 @@ docs/                       Результаты реверса — смысло
   BMW_KOMBI_FLASHER_PLAN.md          анализ, поверхность атаки, дорожная карта
   D-CAN_TRANSPORT_RESEARCH.md        протокол кабеля K+DCAN, BMW-FAST
   BMW_KOMBI_PL2_BOOTLOADER_SIGNATURE_RU.md   схемы подписи BMW, публичные эксплойты
+  article/
+    drive2_gear_box_article.html     готовая статья для Drive2 со всеми апдейтами
   research/
     ANALYSIS_NOTES.md                подробный журнал реверса (читать первым)
     HANDOFF.md                       конспект журнала
@@ -69,6 +71,11 @@ docs/                       Результаты реверса — смысло
     KOMB87_SGBD_FINDINGS.md          разбор SGBD: сегменты, рутины, телетраммы
     INSTRUCTION_READ_FLASH.md        пошаговая инструкция для Windows
     disasm/                          листинги ключевых джобов
+
+can-display/                Модуль вывода параметров на физический экран (Arduino / PlatformIO)
+  src/, lib/, include/               прошивка МК, обработчики K-CAN и PT-CAN
+  cad/, docs/enclosure/              3D-модели и чертежи корпусов (SCAD, STL, SVG)
+  docs/                              документация CAN-сигналов, распиновка
 
 flasher/                    Приложение: чтение и (в перспективе) запись
   kombi_read_flash.py              чтение памяти через EDIABAS api32.dll
