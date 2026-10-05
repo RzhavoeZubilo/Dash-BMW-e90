@@ -1,0 +1,3 @@
+# Чтение/запись памяти приборки через EDIABAS api32.dll.
+# Только Windows + 32-битный Python (api32.dll 32-битная).
+pydiabas>=1.0

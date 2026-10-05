@@ -1,0 +1,114 @@
+{
+  "note": "Проприетарные образы BMW/SP-Daten в репозиторий НЕ включены. Этот манифест фиксирует их контрольные суммы: положите свои копии в каталог local-firmware/ и проверьте через tools/check-firmware.py.",
+  "expected_dir": "local-firmware/",
+  "files": {
+    "9119936B.0pa": {
+      "sha256": "ef86fcd7bf3915e9fd0e6cd2ba941e1692046ccda3e52a6aecafcd06c787e9e6",
+      "size": 1408180
+    },
+    "9130234A.0pa": {
+      "sha256": "b12998c9fb52cef86e90e36cb0264ed12932ceaf21df1d77a26c79596139ff8d",
+      "size": 1408186
+    },
+    "9147949A.0pa": {
+      "sha256": "187eca80747ad531b231ae9de84b592ab561be776c4cabe27db7b785073f092a",
+      "size": 1408182
+    },
+    "9168320A.0pa": {
+      "sha256": "adee24e950267dcd43532b3ac982519615d34e0888dc1a499471a60c3e27d68f",
+      "size": 1408186
+    },
+    "9242396A.0pa": {
+      "sha256": "4fc5f3478754034b21dccfea02cda356fc74b128d0463e6da053eb9cb8c0a830",
+      "size": 1408188
+    },
+    "9260849A.0pa": {
+      "sha256": "fdb09d0ad1cab8e55d2573570b4613c8f764db8ad77ad7d0d1285920a527c3d5",
+      "size": 1408186
+    },
+    "9280355A.0pa": {
+      "sha256": "02f15872ffea074d272993d4cc8b4ce275815224f350485f47f7b33c4afc1aad",
+      "size": 1408188
+    },
+    "9283869A.0pa": {
+      "sha256": "182c29d797509c34c5fa050672de29375ad1d1a332e72c8f190b1e16dd205350",
+      "size": 1408226
+    },
+    "9316169A.0pa": {
+      "sha256": "80a4504056ae20d8f0c4bf9db26bae74e1a6f36a589c2f6e26685a0dd8b63999",
+      "size": 1408186
+    },
+    "HKOML2.DAT": {
+      "sha256": "9550283283435eb302177d7fc810b85d139b69f8c2c93503fc1337f6b5b5471b",
+      "size": 7211
+    },
+    "HKOML2.HIS": {
+      "sha256": "1b2fe0117cd7a77ae71048ca96834150b4364f8e0aa53e79c4fa5ae51741d4aa",
+      "size": 20377
+    },
+    "HKOML2.HWH": {
+      "sha256": "9970dc1fc992b60347705088d1835b0f166448e0ced7bf6205ef5881ac741c1d",
+      "size": 403
+    },
+    "9213308A.0pa": {
+      "sha256": "ea0c6d7cbbfff285e1d8af56155b6d408d7bfcc13115ab18727435f9f6883497",
+      "size": 1497705
+    },
+    "9242397A.0pa": {
+      "sha256": "94a78752863007cf90a6890bfe0e57e68323ddad2839e9bf45a991785563b47b",
+      "size": 1528266
+    },
+    "9283870A.0pa": {
+      "sha256": "22bbf6f9b53b30aa19f430642ba5397c28f926c8d67ce5de80761c785ba7b21d",
+      "size": 1532624
+    },
+    "9347674A.0pa": {
+      "sha256": "2669e551eca1af1cbbe9d73b19b0c6ec5ad226b6ddfd07bf50fdee3d80138258",
+      "size": 1539289
+    },
+    "DKOML2.DAT": {
+      "sha256": "2eb4f6ba8b5303c4e604b3081e021ee37ad38b9796cdf4f68e269cabce624321",
+      "size": 1568
+    },
+    "DKOML2.HIS": {
+      "sha256": "59223c32ad285aa569ba4828b8d0b0a465ffa3222b35084810d747589ea2b09b",
+      "size": 5864
+    },
+    "DKOML2.HWH": {
+      "sha256": "b8c2ae5e6080a19bbde4a9e793c2a258f479f997f09f04ef638750026b16899f",
+      "size": 380
+    },
+    "H01028K_0102FH.0ba": {
+      "sha256": "6285ac0ad1e1b9241921b74f755d9689e1b4ee1a57daf016e5106cd10e8ab468",
+      "size": 73629
+    },
+    "080100HKOML2.ipo": {
+      "sha256": "358c2ccefe78d33e5b669380d5896ecf67e790885097fce6e33ece5b920894e0",
+      "size": 46880
+    },
+    "080101DKOML2.ipo": {
+      "sha256": "a8b57b6410d0f702d3b9c1379848c9f1b981bbf5e6eac83a29f60e31dfc5ede7",
+      "size": 46880
+    },
+    "10flash.prg": {
+      "sha256": "81bd2ad0d2321bccfb0f0ff3d820ff33cdcf4dbfab25c9a20191f085cfc2fdbe",
+      "size": 331504
+    },
+    "KOMB87_bimmergeeks_2016.prg": {
+      "sha256": "c934d72cbd243d760288882dac6706e48fe63395d003ac9ff43e625ebf9b55a3",
+      "size": 821780
+    },
+    "KOMB87_rheingold_2020.prg": {
+      "sha256": "e386e734d42b790f842dcc5f96792bd95893ecd1a4f2824b9e406e1935d3cd0a",
+      "size": 1282130
+    },
+    "KOMB87_spdaten69.prg": {
+      "sha256": "e386e734d42b790f842dcc5f96792bd95893ecd1a4f2824b9e406e1935d3cd0a",
+      "size": 1282130
+    },
+    "KOMB87_stdtools_2019.prg": {
+      "sha256": "97affcee86d94f9096483576723d535a8f4871762410adeaa3df3d2542133907",
+      "size": 829559
+    }
+  }
+}
