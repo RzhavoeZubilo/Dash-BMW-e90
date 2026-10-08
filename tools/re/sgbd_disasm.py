@@ -27,8 +27,8 @@ from pathlib import Path
 _ENV_PATH = os.environ.get("BIMMERDATEN")
 _CANDIDATES = [
     Path(_ENV_PATH) if _ENV_PATH else None,
-    Path(__file__).resolve().parents[1] / "BimmerDaten",
     Path(__file__).resolve().parents[2] / "BimmerDaten",
+    Path(__file__).resolve().parents[3] / "BimmerDaten",
 ]
 for c in _CANDIDATES:
     if c and (c / "decoderPrg.py").exists():
@@ -36,7 +36,6 @@ for c in _CANDIDATES:
         break
 
 try:
-    import decoderPrg  # noqa: E402
     from decoderPrg import OC_MAP, PrgParser  # noqa: E402
 except ImportError:
     print("Ошибка: модуль decoderPrg не найден. Задайте путь через BIMMERDATEN=<путь>", file=sys.stderr)

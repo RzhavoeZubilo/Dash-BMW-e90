@@ -89,9 +89,8 @@ def print_js_matrix(name, grid):
 def ascii_to_bytes(grid):
     height = len(grid)
     width = len(grid[0])
-    bytes_per_row = (width + 7) // 8
     result = []
-    
+
     for row in grid:
         row_bytes = []
         cur_byte = 0

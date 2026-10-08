@@ -7,9 +7,9 @@ BMW, и публиковать их нельзя. Вместо них лежит
 
 Положите свои копии в `local-firmware/` (каталог в .gitignore) и запустите:
 
-    python tools/check-firmware.py
-    python tools/check-firmware.py --dir /path/to/your/files
-    python tools/check-firmware.py --list
+    python tools/check_firmware/check_firmware.py
+    python tools/check_firmware/check_firmware.py --dir /path/to/your/files
+    python tools/check_firmware/check_firmware.py --list
 
 Код возврата: 0 — всё найдено и совпало, 1 — есть расхождения или пропуски.
 """
@@ -21,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 MANIFEST = REPO / "firmware-manifest.json"
 
 

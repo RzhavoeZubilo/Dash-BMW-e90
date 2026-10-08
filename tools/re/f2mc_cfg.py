@@ -39,7 +39,7 @@ Known limitations (deliberate, see ANALYSIS_NOTES.md):
 import json
 import sys
 
-from f2mc_disasm import COND, SIMPLE, disasm_one, pcrel
+from f2mc_disasm import disasm_one, pcrel
 
 # ---------------------------------------------------------------------------
 # image loading

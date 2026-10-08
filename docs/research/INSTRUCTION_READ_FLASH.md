@@ -117,7 +117,7 @@ py -3-32 check_bmw_env.py
 
 Если запускаете прямо из корня репозитория (`Dash-BMW-e90`):
 ```
-py -3-32 flasher/check_bmw_env.py
+py -3-32 tools/flasher/check_bmw_env.py
 ```
 
 Он читает `EDIABAS.INI` и `OBD.INI`, сверяет порт из конфигурации с реально

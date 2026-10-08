@@ -12,9 +12,9 @@ Python и `pydiabas`. Здесь проверяется **вся цепочка 
 Приборку скрипт не опрашивает (для этого `--ident` в kombi_read_flash.py).
 
 Запуск (именно 32-битным Python):
-    py -3-32 flasher/check_bmw_env.py
-    py -3-32 flasher/check_bmw_env.py --ediabas "D:\\EDIABAS"
-    py -3-32 flasher/check_bmw_env.py --firmware-scan "C:\\NCSEXPER,C:\\EDIABAS"
+    py -3-32 tools/flasher/check_bmw_env.py
+    py -3-32 tools/flasher/check_bmw_env.py --ediabas "D:\\EDIABAS"
+    py -3-32 tools/flasher/check_bmw_env.py --firmware-scan "C:\\NCSEXPER,C:\\EDIABAS"
 
 Код возврата: 0 — всё на месте; 1 — предупреждения (чаще всего нет кабеля);
 2 — не выполнены критичные условия, работать не получится.
@@ -617,7 +617,7 @@ def scan_firmware(roots: list[str], manifest: Path) -> None:
         warn(f"отсутствует ({len(absent)}): {', '.join(absent)}")
         print("       Ищите их в установке SP-Daten/NCS/WinKFP и копируйте")
         print("       в local-firmware/ — после этого работает "
-              "`python tools/check-firmware.py`")
+              "`python tools/check_firmware/check_firmware.py`")
 
 
 # ---------------------------------------------------------------------------
@@ -628,7 +628,7 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ediabas", help="каталог установки (по умолчанию C:\\EDIABAS)")
     ap.add_argument("--manifest", type=Path,
-                    default=Path(__file__).resolve().parents[1] / "firmware-manifest.json",
+                    default=Path(__file__).resolve().parents[2] / "firmware-manifest.json",
                     help="манифест проприетарных файлов")
     ap.add_argument("--firmware-scan",
                     help="каталоги через запятую: искать файлы манифеста по хешу")
@@ -652,7 +652,7 @@ def main() -> int:
     warns = [t for s, t in problems if s == "warn"]
     if not blocks and not warns:
         print("  всё на месте — можно запускать "
-              "`py -3-32 flasher/kombi_read_flash.py --ident`")
+              "`py -3-32 tools/flasher/kombi_read_flash.py --ident`")
         return 0
     print(f"  критично: {len(blocks)}, предупреждений: {len(warns)}")
     for text in blocks:

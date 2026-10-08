@@ -16,8 +16,6 @@ Protocol:
 import argparse
 import sys
 import time
-import struct
-import os
 
 try:
     import serial
@@ -70,7 +68,7 @@ class FujitsuFlasher:
 
         print("[*] Синхронизация с Bootloader процессора Fujitsu...")
         print("    (Убедитесь, что вывод MD2 (Pin 21) замкнут на GND, и сделан сброс Reset)")
-        
+
         # Передаем последовательность автоопределения скорости (Autobaud pattern: 0x00 x 20)
         synced = False
         for attempt in range(1, 11):
@@ -78,7 +76,7 @@ class FujitsuFlasher:
             sys.stdout.flush()
             self.ser.write(b'\x00' * 16)
             time.sleep(0.05)
-            
+
             # Проверяем ответ
             resp = self.ser.read(self.ser.in_waiting or 1)
             if resp and (ACK_OK in resp or 0x00 in resp):
@@ -122,7 +120,7 @@ class FujitsuFlasher:
         addr_l = address & 0xFF
         sz_h = (size >> 8) & 0xFF
         sz_l = size & 0xFF
-        
+
         payload = [CMD_READ_BLOCK, addr_h, addr_m, addr_l, sz_h, sz_l]
         chk = (~sum(payload) + 1) & 0xFF
         packet = bytes(payload + [chk])
@@ -140,13 +138,13 @@ class FujitsuFlasher:
         data = self.ser.read(size + 1)
         if len(data) < size:
             return None
-        
+
         block_data = data[:size]
         return block_data
 
     def dump_flash(self, output_filename, start_addr=0xF80000, total_size=512*1024, block_size=256):
         """Полный дамп Flash-памяти в файл"""
-        print(f"[*] Начало считывания Flash памяти:")
+        print("[*] Начало считывания Flash памяти:")
         print(f"    Начальный адрес: 0x{start_addr:06X}")
         print(f"    Размер дампа:    {total_size // 1024} КБ ({total_size} байт)")
         print(f"    Целевой файл:    {output_filename}")
@@ -158,13 +156,13 @@ class FujitsuFlasher:
         for block_idx in range(num_blocks):
             cur_addr = start_addr + (block_idx * block_size)
             progress = (block_idx + 1) / num_blocks * 100
-            
+
             data = self.read_flash_block(cur_addr, block_size)
             if data is None:
                 print(f"\n[-] Ошибка чтения блока по адресу 0x{cur_addr:06X}!")
                 # Заполняем 0xFF в случае единичного сбоя
                 data = b'\xFF' * block_size
-            
+
             dump_data.extend(data)
 
             # Обновление прогресс-бара
