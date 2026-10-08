@@ -96,6 +96,12 @@ tools/                       Все вспомогательные програ�
   patcher/, fujitsu_uart_flasher/,
   bitmap_tool/, bench_cluster_emulator/,
   ui_simulator/                      остальные утилиты (см. их README)
+  site/                              генераторы данных для сайта (см. ниже)
+
+site/                        Статический сайт (GitHub Pages) — справочник,
+                             эмулятор экрана, схема UART. index.html, reference/,
+                             emulator/, uart/. Часть страниц генерируется
+                             (см. «Сайт» ниже) — не редактируются руками.
 
 tests/                       Юнит-тесты для tools/ (pytest)
 
@@ -184,6 +190,34 @@ CI (GitHub Actions, `.github/workflows/ci.yml`) гоняет оба шага н�
 (`tools/re/parse_ihex.py`, `dump_flat.py`, `diff_hex.py`, `f2mc_disasm.py`,
 `tools/check_firmware/check_firmware.py`) — всё, что не требует Windows,
 EDIABAS или подключённого кабеля.
+
+---
+
+## Сайт
+
+Статический сайт в [`site/`](site/) — публичный справочный слой поверх
+`docs/`: таблица джобов SGBD с поиском, карта служб KWP2000, известные
+адреса патчей, эмулятор экрана щитка и схема UART-подключения. Публикуется
+на GitHub Pages Actions-воркфлоу [`pages.yml`](.github/workflows/pages.yml)
+при пуше в `main`
+(после **однократной ручной настройки**: Settings → Pages → Build and
+deployment → Source → **GitHub Actions** — сам воркфлоу включить Pages
+из CLI не может).
+
+Часть страниц **генерируется** из источников, которые и остаются истиной
+(markdown-журнал реверса, `tools/ui_simulator/`) — после правок там нужно
+пересобрать сайт:
+
+```bash
+python3 tools/site/build_jobs_data.py   # docs/research/KOMB87_JOBS.md -> site/reference/jobs-data.js
+python3 tools/site/sync_emulator.py     # tools/ui_simulator/index.html -> site/emulator/simulator.html
+```
+
+CI проверяет синхронность обоих файлов (`--check`) на каждый push/PR — если
+кто-то поправил источник и забыл пересобрать сайт, сборка покраснеет.
+
+Локальный просмотр без сервера — просто откройте `site/index.html` в
+браузере (сайт полностью статический, без зависимостей и build-шага).
 
 ---
 

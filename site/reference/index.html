@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Справочник — Dash-BMW-e90</title>
+<meta name="description" content="Джобы SGBD KOMB87, службы KWP2000, коды сегментов памяти, известные адреса патчей и классификация щитков BMW PL2.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a class="site-brand" href="../index.html"><span class="dot">●</span> Dash-BMW-e90</a>
+    <div class="site-links">
+      <a href="../index.html">Главная</a>
+      <a href="../reference/index.html" class="active">Справочник</a>
+      <a href="../emulator/index.html">Эмулятор экрана</a>
+      <a href="../uart/index.html">UART-подключение</a>
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+</header>
+
+<div class="page" style="padding-top:36px">
+
+  <h1 style="margin-bottom:4px">Справочник</h1>
+  <p class="muted">
+    Щиток <strong>KMBI_PL2</strong> (HKOML2/BKOML2/DKOML2/KOMBL2), МК
+    <strong>Fujitsu MB90F395HA</strong> (F2MC-16LX, flash <code>0xF80000–0xFFFFFF</code>),
+    диагностический SGBD <code>KOMB87.prg</code>. Таблица джобов сгенерирована
+    из <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/KOMB87_JOBS.md">docs/research/KOMB87_JOBS.md</a>
+    скриптом <code>tools/site/build_jobs_data.py</code> — данные не расходятся
+    с исходником реверса.
+  </p>
+
+  <nav class="muted" style="margin:18px 0 0;font-size:13px">
+    <a href="#jobs">Джобы SGBD</a> ·
+    <a href="#services">Службы KWP2000</a> ·
+    <a href="#segments">Сегменты памяти</a> ·
+    <a href="#addresses">Известные адреса и патчи</a> ·
+    <a href="#variants">Варианты щитков</a>
+  </nav>
+
+  <section class="block" id="jobs">
+    <h2>Джобы SGBD KOMB87 (<span id="jobsTotal">133</span>)</h2>
+    <p>
+      Полный список джобов диагностического SGBD <code>KOMB87.prg</code> с
+      адресами внутри контейнера и официальными комментариями BMW
+      (BIP 07.01.00, редакция 5.2). Метки <span class="badge">FIRMWARE</span>
+      — группа с challenge-response аутентификацией и проверкой подписи,
+      <span class="badge coding">CODING</span> — коддинг NCS Expert (без
+      крипто-подписи, только контрольная сумма).
+    </p>
+    <input id="jobsSearch" class="search-box" type="text"
+           placeholder="Поиск по имени джоба или описанию (например: flash, authent, cbs, speicher)…"
+           autocomplete="off">
+    <div class="count-line" id="jobsCount"></div>
+    <table class="ref" id="jobsTable">
+      <thead>
+        <tr><th style="width:30%">Джоб</th><th style="width:14%">Адрес</th><th>Описание</th></tr>
+      </thead>
+      <tbody><!-- заполняется из jobs-data.js --></tbody>
+    </table>
+  </section>
+
+  <section class="block" id="services">
+    <h2>Службы KWP2000 и routine ID</h2>
+    <p>Из <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/KOMB87_SGBD_FINDINGS.md">KOMB87_SGBD_FINDINGS.md</a>
+       — это официальная документация BMW внутри SGBD, а не наш вывод.</p>
+    <table class="ref">
+      <thead><tr><th>Джоб</th><th>Служба KWP2000</th><th>ID / routine</th><th>Фрагмент телеграммы</th></tr></thead>
+      <tbody>
+        <tr><td><code>SPEICHER_LESEN</code></td><td><strong>$23</strong> ReadMemoryByAddress</td><td>—</td><td><code>86 FF F1 23 …</code></td></tr>
+        <tr><td><code>SPEICHER_SCHREIBEN</code></td><td><strong>$3D</strong> WriteMemoryByAddress</td><td>—</td><td><code>80 FF F1 …</code></td></tr>
+        <tr><td><code>AUTHENTISIERUNG_ZUFALLSZAHL_LESEN</code></td><td>$31 StartRoutineByLocalIdentifier</td><td><strong>$07</strong> RequestForAuthentication</td><td><code>83 FF F1 31 07 00</code></td></tr>
+        <tr><td><code>AUTHENTISIERUNG_START</code></td><td>$31</td><td><strong>$08</strong> ReleaseAuthentication</td><td>ключ в <code>BINAER_BUFFER</code></td></tr>
+        <tr><td><code>FLASH_SIGNATUR_PRUEFEN</code></td><td>$31</td><td><strong>$09</strong> CheckSignature</td><td><code>83 FF F1 31 09 02</code></td></tr>
+        <tr><td><code>FLASH_PROGRAMMIER_STATUS_LESEN</code></td><td>$31</td><td><strong>$0A</strong></td><td><code>82 FF F1 31 0A</code></td></tr>
+        <tr><td><code>FLASH_LOESCHEN</code></td><td>$31</td><td><strong>$02</strong> ClearMemory</td><td><code>89 FF F1 31 02 00 00 00 06 00 00 00</code></td></tr>
+        <tr><td><code>FLASH_SCHREIBEN_ADRESSE</code></td><td><strong>$34</strong> RequestDownload</td><td>—</td><td><code>89 FF F1 34 00 00 00 06 00 00 00 00</code></td></tr>
+        <tr><td><code>FLASH_SCHREIBEN</code></td><td><strong>$36</strong> TransferData</td><td>—</td><td>телеграмма из данных</td></tr>
+        <tr><td><code>FLASH_ZEITEN_LESEN</code></td><td>$22 ReadDataByCommonIdentifier</td><td>ID <strong>0x2501</strong></td><td><code>83 FF F1 22 25 01</code></td></tr>
+        <tr><td><code>FLASH_BLOCKLAENGE_LESEN</code></td><td>$22</td><td>ID <strong>0x2506</strong></td><td><code>83 FF F1 22 25 06</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="segments">
+    <h2>Коды сегментов памяти (<code>SPEICHERSEGMENT</code>)</h2>
+    <p>Аргумент джобов <code>SPEICHER_LESEN</code>/<code>SPEICHER_SCHREIBEN</code> —
+       нужны для низкоуровневого доступа к flash в обход coding-слоя.</p>
+    <table class="ref">
+      <thead><tr><th>SEG_BYTE</th><th>Имя</th><th>Смысл</th></tr></thead>
+      <tbody>
+        <tr><td><code>0x00</code></td><td><code>LAR</code></td><td>linearAdressRange</td></tr>
+        <tr><td><code>0x01</code></td><td><code>ROMI</code></td><td>ROM/EPROM, внутренний</td></tr>
+        <tr><td><code>0x02</code></td><td><code>ROMX</code></td><td>ROM/EPROM, внешний</td></tr>
+        <tr><td><code>0x03</code></td><td><code>NVRAM</code></td><td>NV-RAM (характеристики, память DTC)</td></tr>
+        <tr><td><code>0x04</code></td><td><code>RAMIS</code></td><td>RAM внутренний (short MOV)</td></tr>
+        <tr><td><code>0x05</code></td><td><code>RAMXX</code></td><td>RAM внешний (x data MOV)</td></tr>
+        <tr style="background:var(--accent-soft)"><td><code>0x06</code></td><td><strong>FLASH</strong></td><td><strong>Flash EPROM, внутренний</strong> — то, что нужно для доступа к <code>0xFFC000–0xFFFFFF</code></td></tr>
+        <tr><td><code>0x07</code></td><td><code>UIFM</code></td><td>User Info Field Memory</td></tr>
+        <tr><td><code>0x08</code></td><td><code>VODM</code></td><td>Vehicle Order Data Memory</td></tr>
+        <tr><td><code>0x09</code></td><td><code>FLASHX</code></td><td>Flash EPROM, внешний</td></tr>
+        <tr><td><code>0x0B</code></td><td><code>RAMIL</code></td><td>RAM внутренний (long MOV / регистры)</td></tr>
+        <tr><td><code>0xFF</code></td><td>???</td><td>неизвестный сегмент</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">
+      <code>SPEICHER_LESEN(SEGMENT, ADRESSE, ANZAHL)</code> принимает имя
+      сегмента строкой, ANZAHL — 1…254 за один вызов. Для
+      <code>0xFFC000–0xFFFFFF</code>: <code>SEGMENT="FLASH"</code>,
+      <code>ADRESSE=0xFFC000</code>, цикл по 254 байта.
+    </p>
+  </section>
+
+  <section class="block" id="addresses">
+    <h2>Известные адреса и патчи (DKOML2)</h2>
+    <p>Из <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a> —
+       конкретные, опробованные на дампах смещения внутри образа flash.</p>
+    <table class="ref">
+      <thead><tr><th>Адрес</th><th>Модуль патчера</th><th>Что это</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">0xF83DEE</td><td>8HP shiftlight</td><td>глиф пробела (0x20) → глиф цифры «8» (0x38), рендер 8-й передачи на экране</td></tr>
+        <tr><td class="addr">0xFB9958</td><td>8HP shiftlight</td><td>лимит максимальной отображаемой передачи D7 → D8</td></tr>
+        <tr><td class="addr">0xFB9FF0</td><td>ACC shiftlight</td><td>«карман» в прошивке (8 208 Б свободного места) — инжекция собственного F2MC-кода полосок ACC-шкалы</td></tr>
+        <tr><td class="addr">0xFBA060</td><td>Телеметрия</td><td>второй «карман» (Pocket H2) — диспетчер страниц мультиплексора (ОЖ, масло, бак, скорость)</td></tr>
+        <tr><td class="addr">0xFDC1CD</td><td>Телеметрия</td><td>хук в диспетчер нажатия кнопки BC → переключение страниц телеметрии</td></tr>
+        <tr><td class="addr">0xFC2FCA</td><td>Needle sweep</td><td>подмена вызова на штатную процедуру самотеста приборки при старте (развёртка стрелок)</td></tr>
+        <tr><td class="addr">0xFFC000–0xFFFFFF</td><td>—</td><td>защищённая область (загрузчик + векторы CPU); не пишется ни одним штатным <code>.0pa</code>/<code>.0ba</code>, требует дампа через <code>SPEICHER_LESEN</code> или UART Boot ROM</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="variants">
+    <h2>Варианты щитков платформы PL2 (BMW SP-Daten)</h2>
+    <table class="ref">
+      <thead><tr><th>Тип</th><th>Freikennung</th><th>LCD</th><th>Назначение</th></tr></thead>
+      <tbody>
+        <tr><td><code>KOMBL2</code></td><td><code>HD</code></td><td>0.5 pitch (крупный)</td><td>Ранний дорестайл Low (2005–2007), нет стрелок ручного режима, потолок софта C05/C06</td></tr>
+        <tr><td><code>BKOML2</code></td><td><code>RP</code></td><td>0.5 pitch (крупный)</td><td>Рестайлинг Low (2007–2015), базовый щиток 4-цил. моторов (E90/E91, X1 E84), индексы C07–C09</td></tr>
+        <tr><td><code>HKOML2</code></td><td><code>RQ</code></td><td>0.32 pitch (мелкий)</td><td>High для 6-цил. моторов (2005–2015), хромированные кольца, буква передачи без рамки</td></tr>
+        <tr><td><code>DKOML2</code></td><td><code>VF</code></td><td>0.32 pitch (мелкий)</td><td>High под 7-ступенчатый робот DKG (E92/E93 335i DKG, Z4 35i/35is DKG), буква передачи в рамке</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">Источник: HKOML2.DAT / DKOML2.DAT / BKOML2.DAT / KOMBL2.DAT в пакете BMW SP-Daten E89 v69.0.
+    Подробности и методика — <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/BMW_KOMBI_PL2_RESEARCH.md">BMW_KOMBI_PL2_RESEARCH.md</a>.</p>
+  </section>
+
+  <section class="block">
+    <h2>Полные журналы реверса</h2>
+    <p>Эта страница — концентрат самых используемых таблиц. Полная методика,
+       промежуточные гипотезы и история находок — в markdown-документах
+       репозитория:</p>
+    <ul>
+      <li><a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/BMW_KOMBI_FLASHER_PLAN.md">BMW_KOMBI_FLASHER_PLAN.md</a> — анализ, поверхность атаки, дорожная карта</li>
+      <li><a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/ANALYSIS_NOTES.md">docs/research/ANALYSIS_NOTES.md</a> — подробный журнал реверса</li>
+      <li><a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/D-CAN_TRANSPORT_RESEARCH.md">D-CAN_TRANSPORT_RESEARCH.md</a> — протокол кабеля K+DCAN, BMW-FAST</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer class="site">
+  <p>Dash-BMW-e90 — исследовательский проект, не аффилирован с BMW AG. GPL-3.0.</p>
+</footer>
+
+<script src="jobs-data.js"></script>
+<script>
+(function () {
+  var jobs = window.KOMBI_JOBS || [];
+  var tbody = document.querySelector('#jobsTable tbody');
+  var countEl = document.getElementById('jobsCount');
+  var totalEl = document.getElementById('jobsTotal');
+  totalEl.textContent = jobs.length;
+
+  function badge(tag) {
+    var cls = tag === 'CODING' ? 'badge coding' : 'badge';
+    return '<span class="' + cls + '">' + tag + '</span> ';
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c];
+    });
+  }
+
+  function render(list) {
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var j = list[i];
+      var tags = (j.tags || []).map(badge).join('');
+      html += '<tr><td><code>' + escapeHtml(j.name) + '</code></td>' +
+              '<td class="addr">' + j.addr + '</td>' +
+              '<td>' + tags + escapeHtml(j.comment) + '</td></tr>';
+    }
+    tbody.innerHTML = html;
+    countEl.textContent = 'показано ' + list.length + ' из ' + jobs.length;
+  }
+
+  function matches(job, q) {
+    return job.name.toLowerCase().indexOf(q) !== -1 ||
+           job.comment.toLowerCase().indexOf(q) !== -1 ||
+           job.addr.toLowerCase().indexOf(q) !== -1;
+  }
+
+  var search = document.getElementById('jobsSearch');
+  search.addEventListener('input', function () {
+    var q = search.value.trim().toLowerCase();
+    render(q ? jobs.filter(function (j) { return matches(j, q); }) : jobs);
+  });
+
+  render(jobs);
+})();
+</script>
+
+</body>
+</html>
