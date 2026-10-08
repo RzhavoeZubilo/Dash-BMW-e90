@@ -17,12 +17,12 @@ pip3 install pyserial
 
 1. Переведите переходник USB-UART в режим **5V** (джампер питания).
 2. Подключите провода согласно схеме [FUJITSU_MB90F395_UART_PINOUT.md](../docs/hardware/FUJITSU_MB90F395_UART_PINOUT.md):
-   * **TXD** переходника $\rightarrow$ **Pin 11 (SIN0 / RX)** процессора
-   * **RXD** переходника $\rightarrow$ **Pin 12 (SOT0 / TX)** процессора
-   * **GND** переходника $\rightarrow$ **Pin 23 (GND)** процессора
-   * **Pin 21 (MD2)** процессора $\rightarrow$ **GND** (активация Bootloader)
+   * **TXD** переходника $\rightarrow$ **Pin 7 (SIN0 / RX)** процессора
+   * **RXD** переходника $\rightarrow$ **Pin 5 (SOT0 / TX)** процессора
+   * **GND** переходника $\rightarrow$ **Pin 16 (GND)** процессора
+   * **Pin 87 (MD2)** процессора $\rightarrow$ **GND** (активация Bootloader)
 3. Подайте +12 В на разъем приборки X11175 (Pin 9 = +12V, Pin 18 = GND).
-4. Кратковременно замкните **Pin 22 (RSTX)** на GND (для перезагрузки в режим загрузчика).
+4. Кратковременно замкните **Pin 90 (RST)** на GND (для перезагрузки в режим загрузчика).
 
 ---
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UART-подключение — Dash-BMW-e90</title>
-<meta name="description" content="Распиновка MB90F395HA, схема подключения USB-UART переходника и вход в Boot ROM загрузчик Fujitsu для снятия дампа flash.">
+<meta name="description" content="Распиновка MB90F395HA (сверено с даташитом Fujitsu DS07-13723), схема подключения USB-UART переходника и вход в Boot ROM загрузчик для снятия дампа flash.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
 <link rel="stylesheet" href="../assets/style.css">
 </head>
@@ -35,6 +35,14 @@
   </p>
 
   <div class="callout warn">
+    <strong>Номера выводов сверены с даташитом Fujitsu/Spansion
+    DS07-13723-8Ea «MB90390 Series»</strong> (PIN ASSIGNMENTS →
+    «MB90394HA/MB90F394HA/MB90F395HA», не соседний MB90V390HB с другой
+    распиновкой). Предыдущая версия этой страницы содержала неверные номера
+    выводов — если паяли по ней, перепроверьте монтаж по таблице ниже.
+  </div>
+
+  <div class="callout warn">
     <strong>Перед тем как паять:</strong> работайте только на донорской плате,
     не на щитке в автомобиле. Ошибка на шаге 0.5 мм при пайке LQFP-120 может
     привести к короткому замыканию соседних выводов.
@@ -44,8 +52,8 @@
     <h2>Характеристики</h2>
     <table class="ref">
       <tbody>
-        <tr><td style="width:220px"><strong>MCU</strong></td><td>Fujitsu/Spansion MB90F395HA (или MB90F394H)</td></tr>
-        <tr><td><strong>Корпус</strong></td><td>LQFP-120, шаг 0.5 мм</td></tr>
+        <tr><td style="width:220px"><strong>MCU</strong></td><td>Fujitsu/Spansion MB90F395HA (семейство MB90390)</td></tr>
+        <tr><td><strong>Корпус</strong></td><td>LQFP-120, шаг 0.5 мм, 16×16 мм (код <code>FPT-120P-M21</code>)</td></tr>
         <tr><td><strong>Логический уровень I/O</strong></td><td><strong>5.0 В</strong> — джампер переходника USB-UART в положение 5V</td></tr>
         <tr><td><strong>Интерфейс</strong></td><td>Встроенный Boot ROM по UART0 (асинхронный)</td></tr>
       </tbody>
@@ -57,22 +65,37 @@
     <table class="ref">
       <thead><tr><th>Вывод</th><th>Имя</th><th>Назначение в штатном режиме</th><th>При программировании</th></tr></thead>
       <tbody>
-        <tr><td class="addr">Pin 11</td><td><code>SIN0 / P20</code></td><td>Вход UART0 RX</td><td>→ <strong>TXD</strong> переходника</td></tr>
-        <tr><td class="addr">Pin 12</td><td><code>SOT0 / P21</code></td><td>Выход UART0 TX</td><td>→ <strong>RXD</strong> переходника</td></tr>
-        <tr><td class="addr">Pin 19</td><td><code>MD0</code></td><td>Mode Select 0</td><td>1 (подтянут к +5V на плате)</td></tr>
-        <tr><td class="addr">Pin 20</td><td><code>MD1</code></td><td>Mode Select 1</td><td>1 (подтянут к +5V на плате)</td></tr>
-        <tr style="background:var(--accent-soft)"><td class="addr">Pin 21</td><td><code>MD2</code></td><td>Mode Select 2</td><td><strong>замкнуть на GND</strong> — вход в Boot ROM</td></tr>
-        <tr><td class="addr">Pin 22</td><td><code>RSTX</code></td><td>Сброс</td><td>кратковременно на GND после MD2</td></tr>
-        <tr><td class="addr">Pin 23, 62</td><td><code>VSS (GND)</code></td><td>Общий минус</td><td>→ GND переходника</td></tr>
-        <tr><td class="addr">Pin 24, 63</td><td><code>VCC (+5V)</code></td><td>Питание</td><td>от платы (12В на разъёме), НЕ от переходника</td></tr>
+        <tr><td class="addr">Pin 7</td><td><code>SIN0 / P36</code></td><td>Вход UART0 RX («SIN input for UART 0»)</td><td>→ <strong>TXD</strong> переходника</td></tr>
+        <tr><td class="addr">Pin 5</td><td><code>SOT0 / P34</code></td><td>Выход UART0 TX («SOT output for UART 0»)</td><td>→ <strong>RXD</strong> переходника</td></tr>
+        <tr><td class="addr">Pin 6</td><td><code>SCK0 / P35</code></td><td>Такт синхронного режима UART0</td><td>не используется (async), не подключать</td></tr>
+        <tr><td class="addr">Pin 89</td><td><code>MD0</code></td><td>Mode Select 0</td><td>1 (подтянут к +5V на плате)</td></tr>
+        <tr><td class="addr">Pin 88</td><td><code>MD1</code></td><td>Mode Select 1</td><td>1 (подтянут к +5V на плате)</td></tr>
+        <tr style="background:var(--accent-soft)"><td class="addr">Pin 87</td><td><code>MD2</code></td><td>Mode Select 2</td><td><strong>замкнуть на GND</strong> — вход в Boot ROM</td></tr>
+        <tr><td class="addr">Pin 90</td><td><code>RST</code></td><td>Сброс (CMOS Schmitt, подтяжка)</td><td>кратковременно на GND после MD2</td></tr>
+        <tr><td class="addr">Pin 16, 47, 106</td><td><code>VSS (GND)</code></td><td>Общий минус</td><td>→ GND переходника</td></tr>
+        <tr><td class="addr">Pin 15, 105</td><td><code>VCC (+5V)</code></td><td>Питание</td><td>от платы (12В на разъёме), НЕ от переходника</td></tr>
       </tbody>
     </table>
+    <div class="callout warn">
+      <strong>Не перепутайте:</strong> Pin 1 (<code>RX0</code>) и Pin 2
+      (<code>TX0</code>) в даташите подписаны «for CAN Interface 0» — это
+      CAN-шина, не UART, несмотря на созвучное имя. Нужные нам выводы —
+      <strong>SIN0 (Pin 7)</strong> и <strong>SOT0 (Pin 5)</strong>, с именем
+      «UART 0», шестью выводами дальше.
+    </div>
+    <div class="callout">
+      <strong>Ориентир при пайке:</strong> <code>SOT0(5)→SCK0(6)→SIN0(7)</code>
+      — три подряд идущих вывода на одной стороне корпуса.
+      <code>MD2(87)→MD1(88)→MD0(89)→RST(90)</code> — тоже четыре подряд
+      идущих вывода, на противоположной стороне. Нашли один вывод из
+      тройки/четвёрки — остальные считаются по соседству.
+    </div>
     <div class="callout">
       <strong>Режим Flash Serial Programming:</strong> штатно
       <code>MD0=1, MD1=1, MD2=1</code>; для входа в загрузчик —
       <code>MD0=1, MD1=1, MD2=0 (GND)</code>. Достаточно замкнуть
-      <strong>MD2 (Pin 21)</strong> на GND и кратковременно дёрнуть
-      <strong>RSTX (Pin 22)</strong>.
+      <strong>MD2 (Pin 87)</strong> на GND и кратковременно дёрнуть
+      <strong>RST (Pin 90)</strong>.
     </div>
   </section>
 
@@ -81,13 +104,13 @@
     <pre><code>[ USB-UART переходник ]                    [ MB90F395HA, LQFP-120 ]
   джампер -&gt; 5V!!
 
-     TXD  -----------------------------&gt;   Pin 11 (SIN0)   — RX чипа
-     RXD  &lt;-----------------------------   Pin 12 (SOT0)   — TX чипа
-     GND  -----------------------+------&gt;   Pin 23 / 62 (VSS)
+     TXD  -----------------------------&gt;   Pin 7 (SIN0)    — RX чипа
+     RXD  &lt;-----------------------------   Pin 5 (SOT0)    — TX чипа
+     GND  -----------------------+------&gt;   Pin 16 (VSS)
                                  |
-                                 +------&gt;   Pin 21 (MD2)     — на GND, входит в Boot ROM
+                                 +------&gt;   Pin 87 (MD2)     — на GND, входит в Boot ROM
                                  |
-                      (кратковременно) -&gt;   Pin 22 (RSTX)    — сброс после того как MD2 уже на GND
+                      (кратковременно) -&gt;   Pin 90 (RST)     — сброс после того как MD2 уже на GND
 
   VCC/5V переходника — НЕ подключать к плате вообще!
   Питание платы — отдельно: X11175 Pin 9 = +12V (Kl.30), Pin 18 = GND (Kl.31)</code></pre>
@@ -97,10 +120,10 @@
     <h2>Порядок действий</h2>
     <ol>
       <li>Подайте штатное питание +12 В на разъём приборки X11175. Не подавайте +5V с переходника на плату — только сигнальные TXD/RXD/GND.</li>
-      <li>Припаяйте <strong>TXD→Pin 11, RXD→Pin 12, GND→Pin 23/62</strong>. MD2 пока не трогайте.</li>
+      <li>Припаяйте <strong>TXD→Pin 7, RXD→Pin 5, GND→Pin 16</strong>. MD2 пока не трогайте.</li>
       <li>Запустите скрипт чтения дампа — он должен ждать синхронизацию.</li>
-      <li>Замкните <strong>MD2 (Pin 21) на GND</strong>.</li>
-      <li>Только теперь — кратковременный импульс <strong>RSTX (Pin 22) на GND</strong> (или включите питание, если оно было выключено). Именно в этот момент Boot ROM проверяет MD0/MD1/MD2.</li>
+      <li>Замкните <strong>MD2 (Pin 87) на GND</strong>.</li>
+      <li>Только теперь — кратковременный импульс <strong>RST (Pin 90) на GND</strong> (или включите питание, если оно было выключено). Именно в этот момент Boot ROM проверяет MD0/MD1/MD2.</li>
       <li>Отпаяйте перемычку с MD2 и перезагрузите плату, чтобы вернуть обычный режим.</li>
     </ol>
     <pre><code>python3 tools/fujitsu_uart_flasher/fujitsu_flasher.py -p /dev/tty.usbserial-XXXX -o kombi_dump.bin</code></pre>
@@ -110,14 +133,18 @@
     <h2>Безопасная идентификация выводов перед пайкой</h2>
     <p>
       У корпуса LQFP-120 шаг 0.5 мм — отсчитать нужный вывод «на глаз» по
-      фото легко ошибиться. Технологические метки по углам корпуса (следы
-      tie-bar) у чипов Fujitsu часто выглядят одинаково на всех четырёх
-      углах и <strong>не</strong> являются надёжным индикатором «Pin 1».
+      фото легко ошибиться. В даташите (раздел «PACKAGE DIMENSION») рядом с
+      «LEAD No. 1» действительно подписан <strong>INDEX</strong> — то есть
+      физическая метка «Pin 1» у корпуса есть. Но по одной фотографии нельзя
+      быть на 100% уверенным, что увиденная точка — именно она, а не ещё
+      один технологический след от tie-bar, и что чип впаян в той же
+      ориентации, что и чертёж в даташите.
     </p>
     <ol>
       <li>Выключите питание платы.</li>
-      <li>Мультиметром в режиме прозвонки: один щуп на <strong>Pin 18 разъёма X11175</strong> (GND, известен точно) — второй щуп на кандидатов в VSS (Pin 23/62), пока не зазвенит пара соседних выводов.</li>
-      <li>От подтверждённого GND отсчитайте нужные выводы по datasheet-диаграмме корпуса (не по фото платы — перспектива объектива искажает подсчёт).</li>
+      <li>Мультиметром в режиме прозвонки: один щуп на <strong>Pin 18 разъёма X11175</strong> (GND, известен точно) — второй щуп на кандидатов в VSS (Pin 16/47/106), пока не зазвенит.</li>
+      <li>От подтверждённого <strong>VSS (Pin 16)</strong> отсчитайте <strong>9 выводов</strong> в сторону Pin 1 — это <strong>SIN0 (Pin 7)</strong>; SOT0/SCK0 — его соседи. Короткое расстояние вместо подсчёта через весь периметр.</li>
+      <li>Для кластера MD2/MD1/MD0/RST рядом в даташите есть <code>DVSS (Pin 86)</code> — отдельная земля буферов ШИМ-выходов. На простых платах обычно запаяна в ту же сеть GND, но сначала подтвердите это прозвонкой до основной VSS, прежде чем доверять ей как ориентиру.</li>
       <li>После каждой новой пайки — сразу прозвоните на отсутствие КЗ с соседними выводами.</li>
     </ol>
     <p class="muted">Пайка на 0.5 мм: тонкая проволока 30–32 AWG (wire-wrap), тонкое конусное жало, флюс, фиксация термоклеем/каптоном после пайки.</p>
@@ -129,10 +156,22 @@
     <ul>
       <li><strong>Поменяйте местами TXD/RXD</strong> — самая частая причина тишины на дешёвых переходниках.</li>
       <li><strong>Джампер уровня — 5V</strong>, не 3.3V.</li>
-      <li><strong>Проверьте GND</strong>: короткий низкоомный провод прямо к Pin 23/62, не через длинную тонкую проволочку — автобод переключается до 38400/57600, шумная земля рвёт синхронизацию.</li>
-      <li><strong>Прозвоните свежие пайки</strong> на КЗ с соседними выводами, особенно вокруг MD2/RSTX.</li>
-      <li>Попробуйте несколько повторов импульса RSTX подряд при уже заземлённом MD2 — важен тайминг первого байта <code>0x00</code> относительно фронта сброса.</li>
+      <li><strong>Проверьте GND</strong>: короткий низкоомный провод прямо к Pin 16/47/106, не через длинную тонкую проволочку — автобод переключается до 38400/57600, шумная земля рвёт синхронизацию.</li>
+      <li><strong>Прозвоните свежие пайки</strong> на КЗ с соседними выводами, особенно вокруг MD2/RST.</li>
+      <li>Попробуйте несколько повторов импульса RST подряд при уже заземлённом MD2 — важен тайминг первого байта <code>0x00</code> относительно фронта сброса.</li>
     </ul>
+  </section>
+
+  <section class="block">
+    <h2>Источник</h2>
+    <p class="muted">
+      Номера выводов и их функции — из официального даташита Fujitsu/Spansion
+      <strong>DS07-13723-8Ea, «MB90390 Series»</strong>, раздел «PIN
+      ASSIGNMENTS» (таблица «MB90394HA/MB90F394HA/MB90F395HA», TOP VIEW) и
+      «PIN DESCRIPTION». Сам файл — собственность Fujitsu и в репозиторий не
+      публикуется, здесь приведены только номера выводов и их
+      документированные функции как факты.
+    </p>
   </section>
 
 </div>
