@@ -67,7 +67,7 @@ class FujitsuFlasher:
         self.ser.reset_output_buffer()
 
         print("[*] Синхронизация с Bootloader процессора Fujitsu...")
-        print("    (Убедитесь, что вывод MD2 (Pin 21) замкнут на GND, и сделан сброс Reset)")
+        print("    (Убедитесь, что вывод MD2 (Pin 87) замкнут на GND, и сделан сброс Reset)")
 
         # Передаем последовательность автоопределения скорости (Autobaud pattern: 0x00 x 20)
         synced = False
@@ -88,9 +88,9 @@ class FujitsuFlasher:
         if not synced:
             print("\n[-] Ошибка: микроконтроллер не отвечает на запрос синхронизации.")
             print("    Проверьте:")
-            print("    1. Замкнут ли Pin 21 (MD2) на GND?")
+            print("    1. Замкнут ли Pin 87 (MD2) на GND?")
             print("    2. Подано ли питание 12В на приборку (Pin 9: +12V, Pin 18: GND)?")
-            print("    3. Правильно ли подключены RX и TX (TX адаптера -> Pin 11, RX адаптера -> Pin 12)?")
+            print("    3. Правильно ли подключены RX и TX (TX адаптера -> Pin 7, RX адаптера -> Pin 5)?")
             return False
 
         time.sleep(0.1)
