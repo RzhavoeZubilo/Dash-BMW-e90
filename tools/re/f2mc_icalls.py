@@ -33,7 +33,7 @@ import sys
 
 sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.abspath(__file__)))
 
-from f2mc_cfg import analyze, load_image, prologue_seeds, walk_function
+from f2mc_cfg import analyze, load_image, prologue_seeds
 from f2mc_disasm import disasm_one
 
 DATA_LO, DATA_HI = 0xF80000, 0xF9C000
@@ -146,7 +146,7 @@ def main(argv):
 
     if "--find-writes" in argv:
         wanted = [int(x, 0) for x in argv[argv.index("--find-writes") + 1].split(",")]
-        print(f"\nsearching for writes to " + ", ".join(f"0x{w:04X}" for w in wanted))
+        print("\nsearching for writes to " + ", ".join(f"0x{w:04X}" for w in wanted))
         for w in wanted:
             lo, hi = w & 0xFF, (w >> 8) & 0xFF
             hits = []
@@ -158,7 +158,7 @@ def main(argv):
                     hits.append(a)  # dir form, DPR=0x01
             print(f"  0x{w:04X}: {len(hits)} write(s)")
             for a in hits:
-                l, t = disasm_one(data, a, a)
+                _length, t = disasm_one(data, a, a)
                 print(f"      {a:06X}: {t}")
     return 0
 

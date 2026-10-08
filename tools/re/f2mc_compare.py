@@ -73,7 +73,7 @@ def main(argv):
     shared = set(dsig) & set(hsig)
     nd = sum(len(dsig[s]) for s in shared)
     nh = sum(len(hsig[s]) for s in shared)
-    print(f"\nexact mnemonic-sequence match:")
+    print("\nexact mnemonic-sequence match:")
     print(f"  shared signatures: {len(shared)}")
     print(f"  matched: {nd}/{len(dk)} ({100*nd/max(1,len(dk)):.1f}%) DK, "
           f"{nh}/{len(hk)} ({100*nh/max(1,len(hk)):.1f}%) HK")

@@ -1,5 +1,5 @@
 {
-  "note": "Проприетарные образы BMW/SP-Daten в репозиторий НЕ включены. Этот манифест фиксирует их контрольные суммы: положите свои копии в каталог local-firmware/ и проверьте через tools/check-firmware.py.",
+  "note": "Проприетарные образы BMW/SP-Daten в репозиторий НЕ включены. Этот манифест фиксирует их контрольные суммы: положите свои копии в каталог local-firmware/ и проверьте через tools/check_firmware/check_firmware.py.",
   "expected_dir": "local-firmware/",
   "files": {
     "9119936B.0pa": {

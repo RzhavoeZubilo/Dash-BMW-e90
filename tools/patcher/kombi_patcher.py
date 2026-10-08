@@ -25,7 +25,7 @@ class MemoryImage:
         # Check if file is raw binary (512KB) or Intel HEX (.0pa)
         with open(self.filepath, 'rb') as f:
             first_byte = f.read(1)
-        
+
         if first_byte != b':' and first_byte != b';':
             # It's a raw binary dump
             self.is_bin = True
@@ -49,7 +49,7 @@ class MemoryImage:
                 addr = int(line_str[3:7], 16)
                 rec_type = int(line_str[7:9], 16)
                 data_hex = line_str[9:9 + rec_len * 2]
-                
+
                 if rec_type == 0:  # Data
                     phys = base_address + addr
                     for i in range(rec_len):
@@ -96,7 +96,7 @@ class KombiPatcher:
         print("[*] [LCD Screen] Применение патча 8 передач...")
         old_glyph = self.mem.patch_byte(0xF83DEE, 0x38)
         old_limit = self.mem.patch_byte(0xFB9958, 0xD8)
-        
+
         self.applied_patches.append({
             'name': '8-Speed LCD Gearbox Display (Glyph 8 + Limit 8)',
             'scope': 'LCD Screen',
@@ -155,7 +155,7 @@ class KombiPatcher:
         print("[*] [Gauges] Применение патча Needle Sweep (тест стрелок Kl.15)...")
         sweep_bytes = [0x10, 0x65, 0xAC]
         self.mem.patch_bytes(0xFC2FCA, sweep_bytes)
-        
+
         self.applied_patches.append({
             'name': 'Needle Sweep upon Kl.15 Wakeup',
             'scope': 'Stepper Gauges',
@@ -193,26 +193,26 @@ class KombiPatcher:
             0x12, 0x43, 0x28, 0xFF,             # CALLP 0xFF2843 (Bars: 1, 4)
             0x60, 0x00, 0x20,                   # BRA .exit
             # .stage_2_bars:
-            0xD4, 0x52, 0x0C, 0xD2, 0x52, 0x0C, 
+            0xD4, 0x52, 0x0C, 0xD2, 0x52, 0x0C,
             0x12, 0x43, 0x28, 0xFF,             # CALLP 0xFF2843 (Bars: 2, 4)
             0x60, 0x00, 0x16,                   # BRA .exit
             # .stage_3_bars:
-            0xD4, 0x52, 0x0C, 0xD3, 0x52, 0x0C, 
+            0xD4, 0x52, 0x0C, 0xD3, 0x52, 0x0C,
             0x12, 0x43, 0x28, 0xFF,             # CALLP 0xFF2843 (Bars: 3, 4)
             0x60, 0x00, 0x0C,                   # BRA .exit
             # .stage_strobe (5200+):
-            0xD4, 0x52, 0x0C, 0xD4, 0x52, 0x0C, 
+            0xD4, 0x52, 0x0C, 0xD4, 0x52, 0x0C,
             0x12, 0x43, 0x28, 0xFF,             # CALLP 0xFF2843 (Bars: 4, 4)
             0x60, 0x00, 0x02,                   # BRA .exit
             # .acc_all_off:
-            0xD4, 0x52, 0x0C, 0xD0, 0x52, 0x0C, 
+            0xD4, 0x52, 0x0C, 0xD0, 0x52, 0x0C,
             0x12, 0x43, 0x28, 0xFF,             # CALLP 0xFF2843 (Bars: 0, 4)
             # .exit:
             0x6F, 0xC7,                         # POPW RLST(0xC7)
             0x18,                               # UNLINK
             0x0B                                # RETP
         ]
-        
+
         self.mem.patch_bytes(0xFB9FF0, shiftlight_code)
         self.applied_patches.append({
             'name': 'Progressive ACC Shift-Light',
@@ -223,7 +223,7 @@ class KombiPatcher:
 
     def run(self):
         print(f"\n[*] Старт патчинга для профиля: [{self.profile.upper()}]")
-        
+
         # 1. Моды экрана (актуальны для всех, включая Low/Basis)
         self.apply_8speed_patch()
         self.apply_telemetry_patch()
@@ -249,7 +249,7 @@ def main():
     parser = argparse.ArgumentParser(description="BMW E90 Kombi Multi-Profile Firmware Patcher")
     parser.add_argument("-i", "--input", default="local-firmware/9242396A.0pa", help="Входной файл стоковой прошивки (.0pa или .bin)")
     parser.add_argument("-o", "--output-bin", default="kombi_custom_firmware.bin", help="Имя выходного бинарного файла для UART прошивки")
-    parser.add_argument("-p", "--profile", choices=['basis', 'high', 'dkg'], default='basis', 
+    parser.add_argument("-p", "--profile", choices=['basis', 'high', 'dkg'], default='basis',
                         help="Профиль приборки: basis (Low, только экран и стрелки), high (HKOML2), dkg (DKOML2)")
 
     args = parser.parse_args()

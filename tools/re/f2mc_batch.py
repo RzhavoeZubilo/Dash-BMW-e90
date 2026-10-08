@@ -87,7 +87,8 @@ def run_one(args):
     called = set()
     for f in funcs.values():
         called |= f.calls | f.tailcalls
-    in_code = lambda a: any(lo <= a < hi for lo, hi in blocks)
+    def in_code(a):
+        return any(lo <= a < hi for lo, hi in blocks)
 
     out = {}
     for a, f in funcs.items():

@@ -96,7 +96,7 @@ def main(argv):
 
     box_only = [sig for sig in dcount if dcount[sig] == nd and hcount.get(sig, 0) == 0]
     nobox_only = [sig for sig in hcount if hcount[sig] == nh and dcount.get(sig, 0) == 0]
-    print(f"\nfamily-discriminating signatures (unanimous in one family, absent in the other):")
+    print("\nfamily-discriminating signatures (unanimous in one family, absent in the other):")
     print(f"  in ALL {nd} DKOML2 and NO HKOML2: {len(box_only)}")
     print(f"  in ALL {nh} HKOML2 and NO DKOML2: {len(nobox_only)}")
 

@@ -77,23 +77,27 @@ can-display/                Модуль вывода параметров на 
   cad/, docs/enclosure/              3D-модели и чертежи корпусов (SCAD, STL, SVG)
   docs/                              документация CAN-сигналов, распиновка
 
-flasher/                    Приложение: чтение и (в перспективе) запись
-  check_bmw_env.py                 проверка окружения: Python, api32.dll, EDIABAS,
-                                   OBD.INI, COM-порт, кабель, SGBD приборки
-  kombi_read_flash.py              чтение памяти через EDIABAS api32.dll
+tools/                       Все вспомогательные программы, по одному подкаталогу на инструмент
+  flasher/                          Приложение: чтение и (в перспективе) запись
+    check_bmw_env.py                   проверка окружения: Python, api32.dll, EDIABAS,
+                                       OBD.INI, COM-порт, кабель, SGBD приборки
+    kombi_read_flash.py                чтение памяти через EDIABAS api32.dll
+  re/                                Декодеры прошивок и SGBD
+    parse_ihex.py                      .0pa/.0ba → карта памяти
+    dump_flat.py, diff_hex.py          утилиты работы с образами
+    f2mc_disasm.py                     декодер инструкций F2MC-16LX
+    f2mc_cfg.py                        рекурсивный дизассемблер / поиск функций
+    f2mc_batch.py, f2mc_family.py      пакетный анализ и сравнение семейств
+    f2mc_compare.py, f2mc_pairdiff.py  структурное сравнение билдов
+    f2mc_icalls.py                     анализ косвенных вызовов
+    sgbd_disasm.py                     дизассемблер джобов SGBD (.prg)
+  check_firmware/
+    check_firmware.py                  сверка локальных образов по манифесту
+  patcher/, fujitsu_uart_flasher/,
+  bitmap_tool/, bench_cluster_emulator/,
+  ui_simulator/                      остальные утилиты (см. их README)
 
-re-tools/                   Декодеры прошивок и SGBD
-  parse_ihex.py                    .0pa/.0ba → карта памяти
-  dump_flat.py, diff_hex.py        утилиты работы с образами
-  f2mc_disasm.py                   декодер инструкций F2MC-16LX
-  f2mc_cfg.py                      рекурсивный дизассемблер / поиск функций
-  f2mc_batch.py, f2mc_family.py    пакетный анализ и сравнение семейств
-  f2mc_compare.py, f2mc_pairdiff.py  структурное сравнение билдов
-  f2mc_icalls.py                   анализ косвенных вызовов
-  sgbd_disasm.py                   дизассемблер джобов SGBD (.prg)
-
-tools/
-  check-firmware.py                сверка локальных образов по манифесту
+tests/                       Юнит-тесты для tools/ (pytest)
 
 firmware-manifest.json      SHA-256 образов, которые НЕ хранятся в репозитории
 ```
@@ -113,8 +117,8 @@ firmware-manifest.json      SHA-256 образов, которые НЕ хран
 в `local-firmware/` и проверьте:
 
 ```bash
-python tools/check-firmware.py --list     # что ожидается
-python tools/check-firmware.py            # сверить local-firmware/
+python tools/check_firmware/check_firmware.py --list     # что ожидается
+python tools/check_firmware/check_firmware.py            # сверить local-firmware/
 ```
 
 ---
@@ -129,7 +133,7 @@ python tools/check-firmware.py            # сверить local-firmware/
 
 ```bash
 git clone https://github.com/zer02dev/BimmerDaten
-cd re-tools
+cd tools/re
 python3 sgbd_disasm.py <путь>/KOMB87.prg --list
 python3 sgbd_disasm.py <путь>/KOMB87.prg --job SPEICHER_LESEN
 python3 f2mc_cfg.py <путь>/9316169A.0pa --range 0xF9C000,0xFF0000 --json out.json
@@ -141,19 +145,19 @@ python3 f2mc_cfg.py <путь>/9316169A.0pa --range 0xF9C000,0xFF0000 --json out
 (`pydiabas` загружает 32-битную `api32.dll`):
 
 ```bash
-py -3-32 -m pip install -r flasher/requirements.txt
+py -3-32 -m pip install -r tools/flasher/requirements.txt
 
 # окружение целиком: Python, pydiabas, api32.dll, EDIABAS.INI, OBD.INI,
 # COM-порт, драйвер кабеля, SGBD приборки в EcuPath
-py -3-32 flasher/check_bmw_env.py
+py -3-32 tools/flasher/check_bmw_env.py
 
 # сверка проприетарных файлов с манифестом (по SHA-256: имена в установке
 # SP-Daten отличаются от наших, поэтому поиск идёт по содержимому)
-py -3-32 flasher/check_bmw_env.py --firmware-scan "G:\SP-DATEN 67.1"
+py -3-32 tools/flasher/check_bmw_env.py --firmware-scan "G:\SP-DATEN 67.1"
 
-py -3-32 flasher/kombi_read_flash.py --check
-py -3-32 flasher/kombi_read_flash.py --ident
-py -3-32 flasher/kombi_read_flash.py --segment LAR \
+py -3-32 tools/flasher/kombi_read_flash.py --check
+py -3-32 tools/flasher/kombi_read_flash.py --ident
+py -3-32 tools/flasher/kombi_read_flash.py --segment LAR \
     --start 0xFFC000 --end 0x1000000 --out boot.bin
 ```
 
@@ -164,6 +168,22 @@ py -3-32 flasher/kombi_read_flash.py --segment LAR \
 
 Подробная пошаговая инструкция, включая стенд на K-CAN:
 [`docs/research/INSTRUCTION_READ_FLASH.md`](docs/research/INSTRUCTION_READ_FLASH.md).
+
+### Разработка: lint и тесты
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+
+ruff check tools tests   # статический анализ
+pytest -q                # юнит-тесты (tests/)
+```
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) гоняет оба шага на каждый push
+и pull request на Python 3.10 и 3.12. Тесты покрывают чистую логику
+(`tools/re/parse_ihex.py`, `dump_flat.py`, `diff_hex.py`, `f2mc_disasm.py`,
+`tools/check_firmware/check_firmware.py`) — всё, что не требует Windows,
+EDIABAS или подключённого кабеля.
 
 ---
 
@@ -187,7 +207,7 @@ py -3-32 flasher/kombi_read_flash.py --segment LAR \
 
 **GNU GPL-3.0** (см. [LICENSE](LICENSE)).
 
-Это не формальность: `re-tools/sgbd_disasm.py` использует парсер контейнера SGBD
+Это не формальность: `tools/re/sgbd_disasm.py` использует парсер контейнера SGBD
 из BimmerDaten, который является портом BimmerDis, основанного на ediabaslib, —
 оба под GPL-3.0. Использование такого модуля делает производной всю работу,
 поэтому лицензия выбрана осознанно и совпадает с лицензиями соседних проектов.

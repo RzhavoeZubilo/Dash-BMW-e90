@@ -553,7 +553,8 @@ def disasm_one(data, off, addr=None):
         if kind is None:
             return 1, mnem
         if kind == "rel":
-            if off+2 > len(data): return 1+extra, mnem+" ??"
+            if off+2 > len(data):
+                return 1+extra, mnem+" ??"
             d = data[off+1]
             rel = d - 256 if d >= 128 else d
             target = pcrel(addr, 2 + rel)
