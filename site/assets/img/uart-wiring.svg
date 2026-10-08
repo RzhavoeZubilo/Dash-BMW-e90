@@ -62,15 +62,10 @@
     <rect x="820" y="115" width="300" height="475" fill="#111827" stroke="#111827"/>
     <text x="970" y="606" text-anchor="middle" font-size="13" fill="#374151">MB90F395HA, LQFP-120 (показаны только нужные выводы)</text>
 
-    <!-- left-edge pins -->
+    <!-- left-edge pins (short stub at the chip body itself) -->
     <line x1="780" y1="220" x2="820" y2="220" stroke="#9ca3af" stroke-width="3"/>
-    <text x="775" y="216" text-anchor="end" font-size="14" font-weight="600" fill="#111827">Pin 7 · SIN0 (RX чипа)</text>
-
     <line x1="780" y1="260" x2="820" y2="260" stroke="#9ca3af" stroke-width="3"/>
-    <text x="775" y="256" text-anchor="end" font-size="14" font-weight="600" fill="#111827">Pin 5 · SOT0 (TX чипа)</text>
-
     <line x1="780" y1="300" x2="820" y2="300" stroke="#9ca3af" stroke-width="3"/>
-    <text x="775" y="296" text-anchor="end" font-size="14" font-weight="600" fill="#111827">Pin 16 · VSS (GND)</text>
 
     <!-- right-edge pins -->
     <line x1="1120" y1="140" x2="1160" y2="140" stroke="#9ca3af" stroke-width="3"/>
@@ -86,10 +81,20 @@
     <text x="1166" y="496" font-size="14" font-weight="600" fill="#111827">Pin 90 · RST</text>
   </g>
 
-  <!-- ===================== data wires (straight, aligned rows) ===================== -->
-  <path d="M280,220 L 780,220" fill="none" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowData)"/>
-  <path d="M780,260 L 280,260" fill="none" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowData)"/>
-  <path d="M280,300 L 780,300" fill="none" stroke="#44403c" stroke-width="2.5" marker-end="url(#arrowGnd)"/>
+  <!-- ===================== data wires (straight, aligned rows) =====================
+       Каждая линия разорвана в середине — там, где сидит подпись, чтобы стрелка
+       не перекрывала текст (вместо наложения текста поверх линии z-order'ом). -->
+  <path d="M280,220 L 440,220" fill="none" stroke="#c2410c" stroke-width="2.5"/>
+  <path d="M660,220 L 780,220" fill="none" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowData)"/>
+  <text x="550" y="211" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Pin 7 · SIN0 (RX чипа)</text>
+
+  <path d="M780,260 L 660,260" fill="none" stroke="#c2410c" stroke-width="2.5"/>
+  <path d="M440,260 L 280,260" fill="none" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowData)"/>
+  <text x="550" y="251" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Pin 5 · SOT0 (TX чипа)</text>
+
+  <path d="M280,300 L 440,300" fill="none" stroke="#44403c" stroke-width="2.5"/>
+  <path d="M660,300 L 780,300" fill="none" stroke="#44403c" stroke-width="2.5" marker-end="url(#arrowGnd)"/>
+  <text x="550" y="291" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Pin 16 · VSS (GND)</text>
 
   <!-- GND branch up-and-over to MD2 (enter Boot ROM) -->
   <path d="M700,300 L 700,95 L 1120,95 L 1120,140" fill="none" stroke="#44403c" stroke-width="2.5" marker-end="url(#arrowGnd)"/>
