@@ -48,10 +48,13 @@
     <p>
       Полный список джобов диагностического SGBD <code>KOMB87.prg</code> с
       адресами внутри контейнера и официальными комментариями BMW
-      (BIP 07.01.00, редакция 5.2). Метки <span class="badge">FIRMWARE</span>
-      — группа с challenge-response аутентификацией и проверкой подписи,
-      <span class="badge coding">CODING</span> — коддинг NCS Expert (без
-      крипто-подписи, только контрольная сумма).
+      (BIP 07.01.00, редакция 5.2) в колонке «Описание». Метки
+      <span class="badge">FIRMWARE</span> — группа с challenge-response
+      аутентификацией и проверкой подписи, <span class="badge coding">CODING</span>
+      — коддинг NCS Expert (без крипто-подписи, только контрольная сумма).
+      Колонка «Комментарий» — наш собственный перевод-пояснение на русском
+      (<a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/KOMB87_JOBS_RU.md">KOMB87_JOBS_RU.md</a>),
+      не официальный текст BMW, а наша трактовка, что делает джоб и зачем он нужен.
     </p>
     <input id="jobsSearch" class="search-box" type="text"
            placeholder="Поиск по имени джоба или описанию (например: flash, authent, cbs, speicher)…"
@@ -59,7 +62,7 @@
     <div class="count-line" id="jobsCount"></div>
     <table class="ref" id="jobsTable">
       <thead>
-        <tr><th style="width:30%">Джоб</th><th style="width:14%">Адрес</th><th>Описание</th></tr>
+        <tr><th style="width:20%">Джоб</th><th style="width:11%">Адрес</th><th style="width:30%">Описание</th><th>Комментарий</th></tr>
       </thead>
       <tbody><!-- заполняется из jobs-data.js --></tbody>
     </table>
@@ -194,7 +197,8 @@
       var tags = (j.tags || []).map(badge).join('');
       html += '<tr><td><code>' + escapeHtml(j.name) + '</code></td>' +
               '<td class="addr">' + j.addr + '</td>' +
-              '<td>' + tags + escapeHtml(j.comment) + '</td></tr>';
+              '<td>' + tags + escapeHtml(j.comment) + '</td>' +
+              '<td class="muted">' + escapeHtml(j.ru || '') + '</td></tr>';
     }
     tbody.innerHTML = html;
     countEl.textContent = 'показано ' + list.length + ' из ' + jobs.length;
@@ -203,6 +207,7 @@
   function matches(job, q) {
     return job.name.toLowerCase().indexOf(q) !== -1 ||
            job.comment.toLowerCase().indexOf(q) !== -1 ||
+           (job.ru || '').toLowerCase().indexOf(q) !== -1 ||
            job.addr.toLowerCase().indexOf(q) !== -1;
   }
 
