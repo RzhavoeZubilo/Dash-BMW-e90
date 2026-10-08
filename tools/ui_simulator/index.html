@@ -51,10 +51,12 @@
         <div class="absolute -right-10 top-16 w-14 h-64 rounded-full border-l-4 border-orange-600/20 opacity-30 pointer-events-none"></div>
 
         <!-- ================= ACC / FOLLOW-DISTANCE SEGMENT ICON =================
-             Это не точечная матрица, а, судя по фото, отдельный фиксированный
-             сегментный индикатор (машина + 5 трапеций дороги) -- рисуем его
-             как 5 РАЗДЕЛЬНЫХ трапеций с зазорами, как на реальном фото, а не
-             как полупрозрачные линии друг на друге. -->
+             ПОДТВЕРЖДЕНО пользователем: это НЕ точечная матрица вообще, а
+             контрольные лампы за печатной подложкой с рисунком дороги и
+             машины (как у обычных сигнальных значков на панели) -- машина
+             и 4 трапеции дороги светятся по отдельности, подложка с рисунком
+             статична. Рисуем 4 РАЗДЕЛЬНЫЕ трапеции (не точки сетки) с
+             зазорами, как на фото. -->
         <canvas id="accCanvas" class="lcd-canvas mb-1"></canvas>
 
         <!-- ================= UPPER LCD (dot-matrix, pixel-exact canvas) ================= -->
@@ -156,6 +158,26 @@
         </div>
       </div>
 
+      <!-- 4a. Panel type: LOW (крупный растр) vs HIGH (мелкий растр) -->
+      <div class="flex flex-col gap-1.5 pt-2 border-t border-stone-800">
+        <label class="text-xs font-medium text-stone-300">
+          Тип приборки (растр LCD):
+        </label>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <button class="panel-type-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center" data-type="LOW">
+            LOW — KOMBL2/BKOML2 (крупный)
+          </button>
+          <button class="panel-type-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center" data-type="HIGH">
+            HIGH — HKOML2/DKOML2 (мелкий)
+          </button>
+        </div>
+        <p class="text-[11px] text-stone-500">
+          Качественное отличие "крупнее/мельче" подтверждено (см. README),
+          но абсолютное число пикселей — нет. Сетка ниже честно показывает
+          только пропорцию, не измеренное разрешение.
+        </p>
+      </div>
+
       <!-- 4. Upper & Lower LCD View Selectors -->
       <div class="grid grid-cols-2 gap-3 pt-2 border-t border-stone-800">
 
@@ -206,19 +228,31 @@
     // ---- Логическое разрешение экранов -----------------------------------
     // НЕ подтверждено по ПЗУ прошивки (дизассемблер пока не нашёл буфер
     // кадра/регистры LCD-контроллера) -- см. предупреждение в разметке.
-    // Подобрано по пропорциям из BMW TIS (mfp-tnu_e90_anzeige_bedien, стр.
-    // "LC display"): нижнее окно примерно в 2+ раза выше верхнего, оба окна
-    // одной ширины.
-    var UPPER_W = 108, UPPER_H = 28;
-    var LOWER_W = 108, LOWER_H = 64;
-    var ACC_W = 108, ACC_H = 46;
-    var PX = 5; // размер одного логического пикселя в реальных пикселях canvas
+    // Базовая сетка подобрана по пропорциям из BMW TIS
+    // (mfp-tnu_e90_anzeige_bedien, стр. "LC display"): нижнее окно примерно
+    // в 2+ раза выше верхнего, оба окна одной ширины.
+    //
+    // LOW/HIGH: SP-Daten делит щитки PL2 на "крупный растр" (KOMBL2/BKOML2)
+    // и "мелкий растр" (HKOML2/DKOML2) -- это задокументированный
+    // качественный факт (docs/BMW_KOMBI_PL2_RESEARCH.md §2, перепроверено
+    // по .DAT файлам + независимо подтверждено статьёй про рамку передачи).
+    // Числа 0.32мм/0.5мм, которые раньше стояли у этого факта, в репозитории
+    // ничем не подтверждаются (см. правку в BMW_KOMBI_PL2_RESEARCH.md) --
+    // поэтому здесь взято НЕ абсолютное разрешение, а то же самое отношение
+    // "крупнее/мельче", отражённое в логической сетке при одинаковом
+    // физическом размере окна на экране (PX меняется обратно сетке).
+    var PANEL_PROFILES = {
+      HIGH: { upperW: 108, upperH: 28, lowerW: 108, lowerH: 64, accW: 108, accH: 46, px: 5,
+        label: 'HIGH (HKOML2/DKOML2) -- мелкий растр' },
+      LOW:  { upperW: 69,  upperH: 18, lowerW: 69,  lowerH: 41, accW: 69,  accH: 29, px: 8,
+        label: 'LOW (KOMBL2/BKOML2) -- крупный растр' }
+    };
+
+    var UPPER_W, UPPER_H, LOWER_W, LOWER_H, ACC_W, ACC_H, PX;
+    var upperCtx, lowerCtx, accCtx;
 
     var COLOR_ON = '#ff5e1a';
     var COLOR_ON_DIM = 'rgba(255,94,26,0.16)'; // "выключенный" сегмент чуть виден, как на реальном LCD
-
-    document.getElementById('resNote').textContent =
-      UPPER_W + '×' + UPPER_H + ' / ' + LOWER_W + '×' + LOWER_H + ' лог.px';
 
     function setupCanvas(el, w, h) {
       el.width = w * PX;
@@ -230,9 +264,18 @@
       return ctx;
     }
 
-    var upperCtx = setupCanvas(document.getElementById('upperCanvas'), UPPER_W, UPPER_H);
-    var lowerCtx = setupCanvas(document.getElementById('lowerCanvas'), LOWER_W, LOWER_H);
-    var accCtx = setupCanvas(document.getElementById('accCanvas'), ACC_W, ACC_H);
+    function applyPanelProfile(profileKey) {
+      var p = PANEL_PROFILES[profileKey];
+      UPPER_W = p.upperW; UPPER_H = p.upperH;
+      LOWER_W = p.lowerW; LOWER_H = p.lowerH;
+      ACC_W = p.accW; ACC_H = p.accH;
+      PX = p.px;
+      upperCtx = setupCanvas(document.getElementById('upperCanvas'), UPPER_W, UPPER_H);
+      lowerCtx = setupCanvas(document.getElementById('lowerCanvas'), LOWER_W, LOWER_H);
+      accCtx = setupCanvas(document.getElementById('accCanvas'), ACC_W, ACC_H);
+      document.getElementById('resNote').textContent =
+        p.label + ': ' + UPPER_W + '×' + UPPER_H + ' / ' + LOWER_W + '×' + LOWER_H + ' лог.px (PX=' + PX + ')';
+    }
 
     function clear(ctx, w, h) {
       ctx.clearRect(0, 0, w * PX, h * PX);
@@ -311,6 +354,15 @@
       return bmp;
     }
 
+    // Реальная высота отрисовки при запрошенном boxH: scale целочисленный
+    // и не меньше 1, поэтому при маленьком boxH (актуально для LOW-профиля)
+    // фактическая высота может оказаться БОЛЬШЕ запрошенной -- кто кладёт
+    // текст "от верха" фиксированным смещением, рискует вылезти за нижний
+    // край канвы. Используйте это при вёрстке нижних строк.
+    function glyphRenderedH(boxH) {
+      return 7 * Math.max(1, Math.round(boxH / 7));
+    }
+
     // Возвращает суммарную ширину строки в логических пикселях (для центровки)
     function textWidth(str, boxH, spacing) {
       var w = 0;
@@ -340,36 +392,40 @@
       drawText(ctx, str, Math.round(cx - w / 2), y, boxH, color, spacing);
     }
 
-    // ---- Иконки: те же ASCII-битмапы, что в tools/bitmap_tool/bmw_icon_gen.py
-    // (подогнаны вручную по фото щитка -- не выгружены из ПЗУ прошивки).
+    // ---- Иконки: температура масла/ОЖ -- перерисованы по реальным фото
+    // щитка с кастомной прошивкой Bimmerbit (/Users/densh/Work/Develop/BMW/
+    // рендеры/2026-10-08 16.29.24.jpg и .41.jpg, см. zoom-кропы в журнале
+    // сессии). Предыдущая версия ("ASCII-битмап с каплей и ручкой канистры",
+    // 22x10) была собственной выдумкой прошлой сессии и выглядела как
+    // нечитаемое пятно -- на реальном щитке иконка масла ГОРАЗДО проще:
+    // вертикальный штрих-стрелка над пунктирной волной. Это тоже
+    // реконструкция по фотографии (не экстракция из ПЗУ), но хотя бы
+    // пиксель в пиксель повторяет то, что реально светится на приборке,
+    // а не абстрактную канистру.
     var ICON_OIL = [
-      "....#.................",
-      ".....#.......###......",
-      "......#.....#####..#..",
-      "#......#...#######..#.",
-      ".#......#..#######..#.",
-      "..#......#.#######..#.",
-      "...#################..",
-      "....###############...",
-      ".....#############....",
-      "......###########....."
+      "....#....",
+      "....#....",
+      "....#....",
+      "...###...",
+      "....#....",
+      ".........",
+      ".#.#.#.#.",
+      "#.#.#.#.#",
+      "........."
     ];
+    // Термометр ОЖ -- так же по фото (бленда-колба внизу, стебель вверх),
+    // упрощён относительно прежней версии с двойной волной (на реальном
+    // фото волна у значка ОЖ не прорисована отдельно от значка масла).
     var ICON_COOLANT = [
-      "......####......",
-      ".....######.....",
-      ".....##..##.....",
-      ".....##..##.....",
-      ".....##..##.....",
-      ".....##..##.....",
-      "....########....",
-      "...##########...",
-      "...##########...",
-      "....########....",
-      "................",
-      "..#..#....#..#..",
-      ".#....#..#....#.",
-      "................",
-      "#......##......#"
+      "..#..",
+      ".###.",
+      ".#.#.",
+      ".#.#.",
+      ".#.#.",
+      ".#.#.",
+      "#####",
+      "##.##",
+      "#####"
     ];
     var ICON_PUMP = [
       "...########...",
@@ -398,18 +454,30 @@
       "############"
     ];
 
-    function drawIcon(ctx, rows, x, y, color) {
+    // scale -- во сколько логических пикселей рисуется одна ячейка иконки
+    // (по умолчанию 1:1). Иконки должны масштабироваться вместе с текстом
+    // при переключении LOW/HIGH -- иначе на мелкой сетке LOW они съедают
+    // непропорционально много места и наезжают на соседний текст.
+    function drawIcon(ctx, rows, x, y, color, scale) {
+      scale = scale || 1;
       for (var ry = 0; ry < rows.length; ry++) {
         for (var rx = 0; rx < rows[ry].length; rx++) {
-          if (rows[ry][rx] === '#') px(ctx, x + rx, y + ry, color);
+          if (rows[ry][rx] === '#') {
+            for (var sy = 0; sy < scale; sy++) {
+              for (var sx = 0; sx < scale; sx++) {
+                px(ctx, x + rx * scale + sx, y + ry * scale + sy, color);
+              }
+            }
+          }
         }
       }
     }
-    function iconW(rows) { return rows[0].length; }
-    function iconH(rows) { return rows.length; }
+    function iconW(rows, scale) { return rows[0].length * (scale || 1); }
+    function iconH(rows, scale) { return rows.length * (scale || 1); }
 
-    // ---- ACC / индикатор дистанции: 5 РАЗДЕЛЬНЫХ трапеций с зазором между
-    // ними (как на реальном фото), не перекрывающиеся линии. Рисуем через
+    // ---- ACC / индикатор дистанции: контрольные лампы за печатной
+    // подложкой (не точечная матрица), 4 РАЗДЕЛЬНЫХ трапеции с зазором
+    // между ними (как на реальном фото), не перекрывающиеся линии. Рисуем через
     // полигон (жёсткая заливка, без сглаживания контура -- canvas и так не
     // антиалиасит заливку многоугольника, если не просить явно).
     // Растеризуем трапецию САМИ, построчно по логическим пикселям, и красим
@@ -430,21 +498,23 @@
     function drawAcc(litCount) {
       clear(accCtx, ACC_W, ACC_H);
       var cx = ACC_W / 2;
+      var s = ACC_H / 46; // масштаб относительно базовой (HIGH) сетки
 
-      drawIcon(accCtx, ICON_CAR_REAR, Math.round(cx - iconW(ICON_CAR_REAR) / 2), 2,
-        litCount > 0 ? COLOR_ON : COLOR_ON_DIM);
+      drawIcon(accCtx, ICON_CAR_REAR, Math.round(cx - iconW(ICON_CAR_REAR, s) / 2), Math.round(2 * s),
+        litCount > 0 ? COLOR_ON : COLOR_ON_DIM, s);
 
-      // 5 трапеций, сужаются к верху (к машине), с зазором GAP между рядами.
-      var bars = 5;
-      var topY = 12, botY = ACC_H - 2;
+      // 4 трапеции (не 5 -- пересчитано по реальному фото пользователя),
+      // сужаются к верху (к машине), с зазором GAP между рядами.
+      var bars = 4;
+      var topY = 12 * s, botY = ACC_H - 2 * s;
       var totalH = botY - topY;
-      var gap = 3;
+      var gap = 3 * s;
       var rowH = (totalH - gap * (bars - 1)) / bars;
       for (var i = 0; i < bars; i++) {
         var rTop = topY + i * (rowH + gap);
         var rBot = rTop + rowH;
-        var topHalfW = 4 + i * 7;
-        var botHalfW = 4 + (i + 1) * 7;
+        var topHalfW = (4 + i * 7) * s;
+        var botHalfW = (4 + (i + 1) * 7) * s;
         var on = i < litCount;
         fillTrapezoid(accCtx, rTop, rBot, topHalfW, botHalfW, cx, on ? COLOR_ON : COLOR_ON_DIM);
       }
@@ -454,21 +524,24 @@
     function drawUpper(screenMode, data) {
       clear(upperCtx, UPPER_W, UPPER_H);
       var cx = UPPER_W / 2;
+      var s = UPPER_H / 28; // масштаб относительно базовой (HIGH) сетки
+      function S(v) { return Math.round(v * s); }
+
       if (screenMode === 2) { // Часы + улица
-        drawTextCentered(upperCtx, data.time, cx, 2, 14, COLOR_ON, 1);
-        drawTextCentered(upperCtx, data.outTemp, cx, 18, 9, COLOR_ON, 1);
+        drawTextCentered(upperCtx, data.time, cx, S(2), S(14), COLOR_ON, 1);
+        drawTextCentered(upperCtx, data.outTemp, cx, S(18), S(9), COLOR_ON, 1);
       } else if (screenMode === 1 || screenMode === 0) { // масло / ОЖ
         var icon = screenMode === 1 ? ICON_OIL : ICON_COOLANT;
-        var iw = iconW(icon);
-        drawIcon(upperCtx, icon, Math.round(cx - iw / 2), 1, COLOR_ON);
-        drawTextCentered(upperCtx, data.tempValue + '°C', cx, 13, 13, COLOR_ON, 1);
+        var iw = iconW(icon, s);
+        drawIcon(upperCtx, icon, Math.round(cx - iw / 2), S(1), COLOR_ON, s);
+        drawTextCentered(upperCtx, data.tempValue + '°C', cx, S(13), S(13), COLOR_ON, 1);
       } else if (screenMode === 3) { // бак Л/П
-        drawIcon(upperCtx, ICON_PUMP, 2, 1, COLOR_ON);
-        drawText(upperCtx, 'L' + data.tankL, 20, 4, 9, COLOR_ON, 1);
-        drawText(upperCtx, 'R' + data.tankR, 20, 16, 9, COLOR_ON, 1);
+        drawIcon(upperCtx, ICON_PUMP, S(2), S(1), COLOR_ON, s);
+        drawText(upperCtx, 'L' + data.tankL, S(20), S(4), S(9), COLOR_ON, 1);
+        drawText(upperCtx, 'R' + data.tankR, S(20), S(16), S(9), COLOR_ON, 1);
       } else if (screenMode === 4) { // цифровая скорость
-        drawTextCentered(upperCtx, data.speed, cx, 1, 18, COLOR_ON, 1);
-        drawTextCentered(upperCtx, 'km/h', cx, 20, 7, COLOR_ON, 1);
+        drawTextCentered(upperCtx, data.speed, cx, S(1), S(18), COLOR_ON, 1);
+        drawTextCentered(upperCtx, 'km/h', cx, S(20), S(7), COLOR_ON, 1);
       }
     }
 
@@ -484,57 +557,74 @@
     function drawLower(style, mode, gearNum, mid, data) {
       clear(lowerCtx, LOWER_W, LOWER_H);
       var cx = LOWER_W / 2;
+      var s = LOWER_H / 64; // масштаб относительно базовой (HIGH) сетки
+      function S(v) { return Math.round(v * s); }
 
-      // --- gear area, y 2..34 ---
+      // --- gear area, y 2..34 (баз. сетка) ---
       var label = mode;
       if (style === 'A') {
         label = (mode === 'M') ? ('M' + gearNum) : mode;
-        var h = 24, w = textWidth(label, h, 1) + 10;
-        var x0 = Math.round(cx - w / 2), y0 = 3;
-        drawTextCentered(lowerCtx, label, cx, y0 + 5, h, COLOR_ON, 1);
-        strokeRectHard(lowerCtx, x0, y0, x0 + w, y0 + h + 4, COLOR_ON);
+        var h = S(24), w = textWidth(label, h, 1) + S(10);
+        var x0 = Math.round(cx - w / 2), y0 = S(3);
+        drawTextCentered(lowerCtx, label, cx, y0 + S(5), h, COLOR_ON, 1);
+        strokeRectHard(lowerCtx, x0, y0, x0 + w, y0 + h + S(4), COLOR_ON);
       } else if (style === 'B') {
         if (mode === 'D') label = 'D' + gearNum;
         else if (mode === 'M') label = 'S' + gearNum;
-        drawTextCentered(lowerCtx, label, cx, 4, 26, COLOR_ON, 1);
+        drawTextCentered(lowerCtx, label, cx, S(4), S(26), COLOR_ON, 1);
       } else { // C: крупная буква + мелкая цифра снизу-справа
         if (mode === 'M') {
-          drawTextCentered(lowerCtx, String(gearNum), cx, 2, 28, COLOR_ON, 1);
+          drawTextCentered(lowerCtx, String(gearNum), cx, S(2), S(28), COLOR_ON, 1);
           label = String(gearNum);
         } else if (mode === 'D') {
-          var mainW = textWidth('D', 28, 0);
-          var subH = 14;
+          var mainW = textWidth('D', S(28), 0);
+          var subH = S(14);
           var subW = textWidth(String(gearNum), subH, 0);
-          var totalW = mainW + 2 + subW;
+          var totalW = mainW + S(2) + subW;
           var startX = Math.round(cx - totalW / 2);
-          drawText(lowerCtx, 'D', startX, 2, 28, COLOR_ON, 0);
-          drawText(lowerCtx, String(gearNum), startX + mainW + 2, 16, subH, COLOR_ON, 0);
+          drawText(lowerCtx, 'D', startX, S(2), S(28), COLOR_ON, 0);
+          drawText(lowerCtx, String(gearNum), startX + mainW + S(2), S(16), subH, COLOR_ON, 0);
           label = 'D' + gearNum;
         } else {
-          drawTextCentered(lowerCtx, mode, cx, 2, 28, COLOR_ON, 1);
+          drawTextCentered(lowerCtx, mode, cx, S(2), S(28), COLOR_ON, 1);
           label = mode;
         }
       }
       document.getElementById('statGear').textContent = label;
 
-      // --- mid telemetry row, y 38..50 ---
-      var midY = 38;
+      // --- mid telemetry row, y 38..50 (баз. сетка) ---
+      var midY = S(38);
       if (mid === 'range') {
-        drawIcon(lowerCtx, ICON_PUMP, 6, midY, COLOR_ON);
-        drawText(lowerCtx, data.range + ' km', 24, midY + 2, 11, COLOR_ON, 1);
+        drawIcon(lowerCtx, ICON_PUMP, S(6), midY, COLOR_ON, s);
+        drawText(lowerCtx, data.range + ' km', S(24), midY + S(2), S(11), COLOR_ON, 1);
       } else if (mid === 'coolant') {
-        drawIcon(lowerCtx, ICON_COOLANT, 6, midY - 1, COLOR_ON);
-        drawText(lowerCtx, data.coolant + '°C', 28, midY + 2, 11, COLOR_ON, 1);
+        drawIcon(lowerCtx, ICON_COOLANT, S(6), midY - S(1), COLOR_ON, s);
+        drawText(lowerCtx, data.coolant + '°C', S(28), midY + S(2), S(11), COLOR_ON, 1);
       } else if (mid === 'oil') {
-        drawIcon(lowerCtx, ICON_OIL, 6, midY + 1, COLOR_ON);
-        drawText(lowerCtx, data.oilTemp + '°C', 34, midY + 2, 11, COLOR_ON, 1);
+        drawIcon(lowerCtx, ICON_OIL, S(6), midY + S(1), COLOR_ON, s);
+        drawText(lowerCtx, data.oilTemp + '°C', S(34), midY + S(2), S(11), COLOR_ON, 1);
       }
 
-      // --- divider + odometer row, y 54..64 ---
-      for (var x = 2; x < LOWER_W - 2; x += 2) px(lowerCtx, x, 53, COLOR_ON_DIM);
-      drawText(lowerCtx, data.odo, 4, 56, 9, COLOR_ON, 1);
-      var tripW = textWidth(data.trip, 9, 1);
-      drawText(lowerCtx, data.trip, LOWER_W - 4 - tripW, 56, 9, COLOR_ON, 1);
+      // --- divider + odometer row: ПРИВЯЗАНО К НИЗУ канвы, не к сетке
+      // сверху -- при маленьком boxH (LOW-профиль) реальная высота глифа
+      // не сжимается ниже 7px (см. glyphRenderedH), и текст, положенный
+      // фиксированным смещением "от верха", вылезал за нижний край канвы
+      // и обрезался. ---
+      var odoH = S(9);
+      var odoRenderedH = glyphRenderedH(odoH);
+      var odoY = LOWER_H - odoRenderedH - S(1);
+      var divY = odoY - S(3);
+      for (var x = 2; x < LOWER_W - 2; x += 2) px(lowerCtx, x, divY, COLOR_ON_DIM);
+      var odoX = S(4);
+      var odoW = textWidth(data.odo, odoH, 1);
+      var tripW = textWidth(data.trip, odoH, 1);
+      // Обычно пробег слева, суточный счётчик прижат вправо -- так на
+      // реальном щитке. Но на узкой сетке (LOW-профиль) оба текста рядом
+      // физически не влезают -- тогда не даём им наложиться, ставим
+      // суточный счётчик сразу после пробега с небольшим зазором.
+      var tripX = Math.max(LOWER_W - S(4) - tripW, odoX + odoW + S(3));
+      drawText(lowerCtx, data.odo, odoX, odoY, odoH, COLOR_ON, 1);
+      drawText(lowerCtx, data.trip, tripX, odoY, odoH, COLOR_ON, 1);
     }
 
     // ---- state & wiring (логика управления не менялась, только рендер) ---
@@ -543,11 +633,26 @@
       mode: 'D',
       gearNum: 3,
       gearStyle: 'C',
+      panelType: 'HIGH',
       upperScreen: 1,
       lowerMid: 'range',
       demoRunning: false,
       demoInterval: null
     };
+
+    applyPanelProfile(state.panelType);
+
+    Array.prototype.forEach.call(document.querySelectorAll('.panel-type-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        Array.prototype.forEach.call(document.querySelectorAll('.panel-type-btn'), function (b) {
+          b.className = 'panel-type-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center';
+        });
+        btn.className = 'panel-type-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center';
+        state.panelType = btn.dataset.type;
+        applyPanelProfile(state.panelType);
+        updateClusterUI();
+      });
+    });
 
     var fixedData = {
       time: '19:34', outTemp: '+22.0°C',

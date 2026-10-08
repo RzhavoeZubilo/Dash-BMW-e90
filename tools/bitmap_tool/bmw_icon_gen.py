@@ -4,42 +4,45 @@ BMW E90 VDO LCD Matrix Icon & Font Generator
 Converts ASCII art / pixel maps to:
   1. C byte arrays (1 bit per pixel) for Fujitsu MB90F395HA ROM.
   2. Pure 1-bit Canvas pixel-drawing matrices for 1:1 hardware emulator.
+
+ВАЖНО: это РЕКОНСТРУКЦИЯ по референсным фото реального щитка с кастомной
+прошивкой Bimmerbit (не экстракция из ПЗУ оригинальной прошивки BMW -- тот
+знакогенератор ещё не найден дизассемблером). Единственный источник истины
+для actually используемых в проекте иконок -- JS-копии в
+tools/ui_simulator/index.html (ICON_OIL/ICON_COOLANT/ICON_PUMP); этот файл
+не синхронизируется с ними автоматически, обновляйте оба места вручную при
+правках.
 """
 
-# 1. Authentic BMW Oil Can (22x10 pixels)
-# Spout on LEFT with a drop, filler cap in center top, loop handle on RIGHT.
-# As seen on BMW E90 Kombi (Bimmerbit photos & factory KOMBI symbols)
-OIL_CAN_ICON_22x10 = [
-    "....#.................",  # Drop
-    ".....#.......###......",  # Cap
-    "......#.....#####..#..",  # Spout start & Handle top
-    "#......#...#######..#.",  # Spout tip
-    ".#......#..#######..#.",  # Spout & Can body
-    "..#......#.#######..#.",
-    "...#################..",  # Lower body & handle join
-    "....###############...",  # Base
-    ".....#############....",
-    "......###########....."
+# 1. Иконка температуры масла (9x9) -- перерисована по фото реального щитка
+# (вертикальный штрих-стрелка над пунктирной волной), см. тот же массив
+# в tools/ui_simulator/index.html::ICON_OIL. Прежняя версия (22x10,
+# "канистра с ручкой и каплей") была собственной выдумкой без опоры на
+# фото и выглядела нечитаемым пятном на реальном экране.
+OIL_ICON_9x9 = [
+    "....#....",
+    "....#....",
+    "....#....",
+    "...###...",
+    "....#....",
+    ".........",
+    ".#.#.#.#.",
+    "#.#.#.#.#",
+    "........."
 ]
 
-# 2. Authentic BMW Coolant Thermometer with Waves (16x15 pixels)
-# Central vertical thermometer stem, bulb at base, double horizontal waves
-COOLANT_ICON_16x15 = [
-    "......####......",
-    ".....######.....",
-    ".....##..##.....",
-    ".....##..##.....",
-    ".....##..##.....",
-    ".....##..##.....",
-    "....########....",
-    "...##########...",
-    "...##########...",
-    "....########....",
-    "................",
-    "..#..#....#..#..",  # Top wave
-    ".#....#..#....#.",
-    "................",
-    "#......##......#"   # Bottom wave
+# 2. Иконка температуры ОЖ (термометр, 5x9) -- упрощена по тому же фото,
+# см. tools/ui_simulator/index.html::ICON_COOLANT.
+COOLANT_ICON_5x9 = [
+    "..#..",
+    ".###.",
+    ".#.#.",
+    ".#.#.",
+    ".#.#.",
+    ".#.#.",
+    "#####",
+    "##.##",
+    "#####"
 ]
 
 # 3. Authentic BMW Fuel Pump / Gas Icon (14x16 pixels)
@@ -62,22 +65,6 @@ GAS_PUMP_ICON_14x16 = [
     ".############.",
     "##############"
 ]
-
-# 4. BMW Digits 0-9 & Special Chars for 80x32 LCD (7x12 matrix font)
-# High-accuracy bitmap font matching BMW VDO LCD ROM
-LCD_FONT_7x12 = {
-    '0': [
-        ".#####.",
-        "#.....#",
-        "#....##",
-        "#...#.#",
-        "#..#..#",
-        "#.井..#",
-        "##....#",
-        "#.....#",
-        ".#####."
-    ]
-}
 
 def print_js_matrix(name, grid):
     print(f"const {name} = [")
@@ -119,8 +106,8 @@ def print_c_array(name, width, height, data):
 
 def main():
     print("=== BMW E90 LCD Matrix Bitmaps ===")
-    for name, icon in [("icon_oil_22x10", OIL_CAN_ICON_22x10),
-                       ("icon_coolant_16x15", COOLANT_ICON_16x15),
+    for name, icon in [("icon_oil_9x9", OIL_ICON_9x9),
+                       ("icon_coolant_5x9", COOLANT_ICON_5x9),
                        ("icon_gas_14x16", GAS_PUMP_ICON_14x16)]:
         w, h, raw = ascii_to_bytes(icon)
         print_c_array(name, w, h, raw)
