@@ -27,3 +27,8 @@ jobs:
 
       - name: Unit tests (pytest)
         run: pytest -q
+
+      - name: site/ сгенерирован из текущих источников (jobs-data.js, simulator.html)
+        run: |
+          python tools/site/build_jobs_data.py --check
+          python tools/site/sync_emulator.py --check

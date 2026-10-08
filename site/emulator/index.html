@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Эмулятор экрана — Dash-BMW-e90</title>
+<meta name="description" content="Интерактивная модель LCD-дисплея приборки BMW E90 — проверить отображение показаний модифицированной прошивки без прошивки реальной платы.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .sim-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+    margin: 20px 0 8px;
+  }
+  .sim-wrap iframe {
+    width: 100%;
+    height: 900px;
+    border: 0;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a class="site-brand" href="../index.html"><span class="dot">●</span> Dash-BMW-e90</a>
+    <div class="site-links">
+      <a href="../index.html">Главная</a>
+      <a href="../reference/index.html">Справочник</a>
+      <a href="../emulator/index.html" class="active">Эмулятор экрана</a>
+      <a href="../uart/index.html">UART-подключение</a>
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+</header>
+
+<div class="page" style="padding-top:36px">
+
+  <h1 style="margin-bottom:4px">Эмулятор экрана приборки</h1>
+  <p class="muted">
+    Точная пиксельная сетка янтарного LCD, пропорции заводских шрифтов и
+    пиктограмм DKOML2. Используйте для проверки раскладки и читаемости
+    показаний <strong>до</strong> прошивки реального щитка — переключайте
+    режимы и значения интерактивными элементами под экраном.
+    Исходник инструмента (для локальной разработки):
+    <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/ui_simulator/index.html">tools/ui_simulator/index.html</a>.
+  </p>
+
+  <div class="callout">
+    Это визуальная модель раскладки экрана, а не прошивка «в железе» —
+    итоговый вид на реальном дисплее может чуть отличаться по яркости и
+    углу обзора амбер-LCD. Перед заливкой в донорскую плату сверяйтесь
+    также с таблицей адресов в <a href="../reference/index.html#addresses">справочнике</a>.
+  </div>
+
+  <div class="sim-wrap">
+    <iframe src="simulator.html" title="BMW E90 Cluster UI Simulator" loading="lazy"></iframe>
+  </div>
+
+  <p class="muted" style="margin-top:4px">
+    Если встроенная версия не грузится (например, офлайн) — откройте
+    <a href="simulator.html" target="_blank" rel="noopener">simulator.html напрямую</a>.
+  </p>
+
+</div>
+
+<footer class="site">
+  <p>Dash-BMW-e90 — исследовательский проект, не аффилирован с BMW AG. GPL-3.0.</p>
+</footer>
+
+</body>
+</html>

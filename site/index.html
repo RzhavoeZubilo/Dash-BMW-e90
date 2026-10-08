@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dash-BMW-e90 — кастомные прошивки приборки BMW E90</title>
+<meta name="description" content="Реверс-инжиниринг приборных панелей BMW KMBI_PL2 (E8x/E9x): справочник джобов и адресов, эмулятор экрана, схема UART-подключения.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a class="site-brand" href="index.html"><span class="dot">●</span> Dash-BMW-e90</a>
+    <div class="site-links">
+      <a href="index.html" class="active">Главная</a>
+      <a href="reference/index.html">Справочник</a>
+      <a href="emulator/index.html">Эмулятор экрана</a>
+      <a href="uart/index.html">UART-подключение</a>
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </nav>
+</header>
+
+<section class="hero">
+  <span class="kicker">KMBI_PL2 · HKOML2 / BKOML2 / DKOML2 / KOMBL2 · Fujitsu MB90F395HA</span>
+  <h1>Кастомные прошивки приборной панели BMW E90</h1>
+  <p class="lead">
+    Реверс-инжиниринг щитков приборов платформы PL2 (E8x/E9x/E84/E89):
+    расширение заводского функционала дисплея и загрузка кастомных прошивок
+    без программатора. Проект в стадии исследования — ниже то, что уже
+    воспроизводимо подтверждено.
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="reference/index.html">Открыть справочник →</a>
+    <a class="btn" href="emulator/index.html">Эмулятор экрана</a>
+    <a class="btn" href="uart/index.html">Схема UART</a>
+  </div>
+</section>
+
+<div class="page">
+
+  <section class="block">
+    <h2>Разделы</h2>
+    <div class="card-grid">
+      <a class="card" href="reference/index.html" style="text-decoration:none">
+        <span class="tag">DATA</span>
+        <h3>Справочник</h3>
+        <p>133 джоба SGBD KOMB87 с адресами, карта служб KWP2000 и routine ID,
+        коды сегментов памяти, известные адреса патчей и классификация
+        аппаратных вариантов щитков.</p>
+      </a>
+      <a class="card" href="emulator/index.html" style="text-decoration:none">
+        <span class="tag">TOOL</span>
+        <h3>Эмулятор экрана</h3>
+        <p>Интерактивная модель LCD-дисплея щитка (точная пиксельная сетка,
+        шрифты и пиктограммы) — проверить, как будут выглядеть показания
+        модифицированной прошивки, не прошивая реальную плату.</p>
+      </a>
+      <a class="card" href="uart/index.html" style="text-decoration:none">
+        <span class="tag">HW</span>
+        <h3>UART-подключение</h3>
+        <p>Распиновка MB90F395HA, вход в заводской Boot ROM загрузчик Fujitsu,
+        схема подключения USB-UART переходника, безопасная идентификация
+        выводов и разбор типичных проблем синхронизации.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Что это и чего здесь нет</h2>
+    <p>
+      Щиток приборов BMW KMBI_PL2 построен на микроконтроллере
+      <strong>Fujitsu/Spansion MB90F395HA</strong> (F2MC-16LX, 512 КБ flash
+      по адресам <code>0xF80000–0xFFFFFF</code>), с диагностическим SGBD
+      <code>KOMB87.prg</code>. Цель проекта — программное обеспечение,
+      позволяющее заливать кастомную прошивку по проводу (D-CAN/UART), без
+      программатора: тот же класс продукта, что <code>xHP Flashtool</code>
+      или <code>MHD Flasher</code> для других систем BMW.
+    </p>
+    <div class="callout warn">
+      <strong>Чего проект не делает:</strong> не подбирает и не ломает
+      RSA-ключи подписи BMW и не пытается обойти диагностическую
+      аутентификацию. Данные на этом сайте — результат легального чтения
+      (штатный Boot ROM Fujitsu, публичные SP-Daten/EDIABAS, физический
+      анализ плат) и документированный факт, а не инструкция по взлому
+      защиты.
+    </div>
+    <p>
+      Полные журналы реверс-инжиниринга (с объяснением методики для каждого
+      вывода) лежат в <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/tree/main/docs" target="_blank" rel="noopener"><code>docs/</code></a>
+      репозитория — этот сайт их не заменяет, а даёт быстрый поисковый слой
+      поверх самых востребованных таблиц.
+    </p>
+  </section>
+
+  <section class="block">
+    <h2>Смежные проекты</h2>
+    <div class="card-grid">
+      <a class="card" href="https://github.com/RzhavoeZubilo/bmw-e90-can-display" target="_blank" rel="noopener" style="text-decoration:none">
+        <h3>bmw-e90-can-display</h3>
+        <p>Отдельный дисплей на Arduino, слушает PT-CAN/K-CAN и показывает
+        любые параметры рядом со штатной приборкой.</p>
+      </a>
+      <a class="card" href="https://maseg535.github.io/E90-and-e8x-DBC-mega-merge-project/can_ids_reference.html" target="_blank" rel="noopener" style="text-decoration:none">
+        <h3>DBC-mega-merge</h3>
+        <p>Полная база описаний CAN-сигналов E9x/E8x с разбором по байтам.</p>
+      </a>
+      <a class="card" href="https://github.com/zer02dev/BimmerDaten" target="_blank" rel="noopener" style="text-decoration:none">
+        <h3>BimmerDaten</h3>
+        <p>Парсер контейнера EDIABAS <code>.prg</code> (SGBD), на нём основан
+        разбор джобов <code>KOMB87</code> в этом справочнике.</p>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site">
+  <p>Dash-BMW-e90 — исследовательский проект, не аффилирован с BMW AG.
+  Исходники: <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90">github.com/RzhavoeZubilo/Dash-BMW-e90</a>, лицензия GPL-3.0.</p>
+</footer>
+
+</body>
+</html>
