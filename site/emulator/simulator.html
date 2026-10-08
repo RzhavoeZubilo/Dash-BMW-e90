@@ -276,6 +276,11 @@
       upperCtx = setupCanvas(document.getElementById('upperCanvas'), UPPER_W, UPPER_H);
       lowerCtx = setupCanvas(document.getElementById('lowerCanvas'), LOWER_W, LOWER_H);
       accCtx = setupCanvas(document.getElementById('accCanvas'), ACC_W, ACC_H);
+      // Подтверждено пользователем (физически, по своей приборке): ACC/лампы
+      // дистанции стоят только на HIGH-щитках (HKOML2/DKOML2), на LOW
+      // (KOMBL2/BKOML2) этого узла нет вообще -- прячем канву, а не просто
+      // рисуем пустой.
+      document.getElementById('accCanvas').style.display = (profileKey === 'LOW') ? 'none' : '';
       document.getElementById('resNote').textContent =
         p.label + ': ' + UPPER_W + '×' + UPPER_H + ' / ' + LOWER_W + '×' + LOWER_H + ' лог.px (PX=' + PX + ')';
     }
@@ -562,41 +567,67 @@
       var cx = LOWER_W / 2;
       var s = LOWER_H / 64; // масштаб относительно базовой (HIGH) сетки
       function S(v) { return Math.round(v * s); }
+      // На LOW-профиле (69x41) три строки нижнего экрана, рассчитанные по
+      // пропорции от HIGH, физически не помещаются без наложения: битмап-
+      // шрифт не сжимается плавно (минимум 7px на "ступень" -- см.
+      // glyphRenderedH), поэтому у коротких HIGH-строк ниже свободного места,
+      // чем нужно их уменьшенным аналогам. На HIGH ветка ниже не меняет
+      // ничего (все clamp'ы заведомо не срабатывают при s=1, числа совпадают
+      // с прежними константами), на LOW -- не даёт строкам залезть друг на
+      // друга (ценой лёгкого поджатия/обрезки снизу вместо нечитаемой каши).
+      var isLow = (LOWER_H < 64);
 
-      // --- gear area, y 2..34 (баз. сетка) ---
+      // --- gear area ---
       var label = mode;
+      var gearBottom;
       if (style === 'A') {
         label = (mode === 'M') ? ('M' + gearNum) : mode;
-        var h = S(24), w = textWidth(label, h, 1) + S(10);
+        var h = S(24), renderedH = glyphRenderedH(h);
+        var w = textWidth(label, h, 1) + S(10);
         var x0 = Math.round(cx - w / 2), y0 = S(3);
         drawTextCentered(lowerCtx, label, cx, y0 + S(5), h, COLOR_ON, 1);
         strokeRectHard(lowerCtx, x0, y0, x0 + w, y0 + h + S(4), COLOR_ON);
+        gearBottom = y0 + h + S(4);
       } else if (style === 'B') {
         if (mode === 'D') label = 'D' + gearNum;
         else if (mode === 'M') label = 'S' + gearNum;
-        drawTextCentered(lowerCtx, label, cx, S(4), S(26), COLOR_ON, 1);
+        var h2 = S(26), y02 = S(4);
+        drawTextCentered(lowerCtx, label, cx, y02, h2, COLOR_ON, 1);
+        gearBottom = y02 + glyphRenderedH(h2);
       } else { // C: крупная буква + мелкая цифра снизу-справа
         if (mode === 'M') {
-          drawTextCentered(lowerCtx, String(gearNum), cx, S(2), S(28), COLOR_ON, 1);
+          var h3 = S(28), y03 = S(2);
+          drawTextCentered(lowerCtx, String(gearNum), cx, y03, h3, COLOR_ON, 1);
           label = String(gearNum);
+          gearBottom = y03 + glyphRenderedH(h3);
         } else if (mode === 'D') {
-          var mainW = textWidth('D', S(28), 0);
+          var mainH = S(28), y0d = S(2);
+          var mainW = textWidth('D', mainH, 0);
           var subH = S(14);
           var subW = textWidth(String(gearNum), subH, 0);
           var totalW = mainW + S(2) + subW;
           var startX = Math.round(cx - totalW / 2);
-          drawText(lowerCtx, 'D', startX, S(2), S(28), COLOR_ON, 0);
+          drawText(lowerCtx, 'D', startX, y0d, mainH, COLOR_ON, 0);
           drawText(lowerCtx, String(gearNum), startX + mainW + S(2), S(16), subH, COLOR_ON, 0);
           label = 'D' + gearNum;
+          gearBottom = y0d + glyphRenderedH(mainH);
         } else {
-          drawTextCentered(lowerCtx, mode, cx, S(2), S(28), COLOR_ON, 1);
+          var h4 = S(28), y04 = S(2);
+          drawTextCentered(lowerCtx, mode, cx, y04, h4, COLOR_ON, 1);
           label = mode;
+          gearBottom = y04 + glyphRenderedH(h4);
         }
       }
       document.getElementById('statGear').textContent = label;
 
-      // --- mid telemetry row, y 38..50 (баз. сетка) ---
+      // --- mid telemetry row ---
       var midY = S(38);
+      if (isLow) midY = Math.max(midY, gearBottom + S(4));
+      var midTextRH = glyphRenderedH(S(11));
+      var midIconRH = mid === 'range' ? iconH(ICON_PUMP, s)
+        : mid === 'coolant' ? iconH(ICON_COOLANT, s)
+        : iconH(ICON_OIL, s);
+      var midRowBottom = midY + Math.max(midTextRH, midIconRH);
       if (mid === 'range') {
         drawIcon(lowerCtx, ICON_PUMP, S(6), midY, COLOR_ON, s);
         drawText(lowerCtx, data.range + ' km', S(24), midY + S(2), S(11), COLOR_ON, 1);
@@ -617,6 +648,10 @@
       var odoRenderedH = glyphRenderedH(odoH);
       var odoY = LOWER_H - odoRenderedH - S(1);
       var divY = odoY - S(3);
+      if (isLow) {
+        divY = Math.max(divY, midRowBottom + S(2));
+        odoY = Math.max(odoY, divY + S(3));
+      }
       for (var x = 2; x < LOWER_W - 2; x += 2) px(lowerCtx, x, divY, COLOR_ON_DIM);
       var odoX = S(4);
       var odoW = textWidth(data.odo, odoH, 1);
@@ -679,7 +714,9 @@
       else { shiftText = isManual ? 'ГОТОВ (<4000)' : 'ВКЛЮЧИТЕ [M]'; }
       document.getElementById('statShift').textContent = shiftText;
 
-      drawAcc(strobe ? (Math.floor(Date.now() / 100) % 2 === 0 ? 5 : 0) : lit);
+      if (state.panelType !== 'LOW') {
+        drawAcc(strobe ? (Math.floor(Date.now() / 100) % 2 === 0 ? 5 : 0) : lit);
+      }
       drawUpper(state.upperScreen, fixedData);
       drawLower(state.gearStyle, state.mode, state.gearNum, state.lowerMid, fixedData);
     }
