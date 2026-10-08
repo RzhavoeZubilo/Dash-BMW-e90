@@ -101,19 +101,13 @@
 
   <section class="block">
     <h2>Схема подключения</h2>
-    <pre><code>[ USB-UART переходник ]                    [ MB90F395HA, LQFP-120 ]
-  джампер -&gt; 5V!!
-
-     TXD  -----------------------------&gt;   Pin 7 (SIN0)    — RX чипа
-     RXD  &lt;-----------------------------   Pin 5 (SOT0)    — TX чипа
-     GND  -----------------------+------&gt;   Pin 16 (VSS)
-                                 |
-                                 +------&gt;   Pin 87 (MD2)     — на GND, входит в Boot ROM
-                                 |
-                      (кратковременно) -&gt;   Pin 90 (RST)     — сброс после того как MD2 уже на GND
-
-  VCC/5V переходника — НЕ подключать к плате вообще!
-  Питание платы — отдельно: X11175 Pin 9 = +12V (Kl.30), Pin 18 = GND (Kl.31)</code></pre>
+    <div style="background:#fff;border-radius:var(--radius);padding:12px;overflow-x:auto">
+      <img src="../assets/img/uart-wiring.svg" alt="Схема подключения USB-UART переходника к MB90F395HA: TXD→Pin7(SIN0), RXD←Pin5(SOT0), GND→Pin16(VSS) и далее на Pin87(MD2), GND разъёма X11175→Pin90(RST) кратковременно" style="width:100%;min-width:760px;display:block">
+    </div>
+    <p class="muted" style="margin-top:8px">
+      VCC/5V переходника — не подключать к плате вообще. Питание платы —
+      отдельно: X11175 Pin 9 = +12V (Kl.30), Pin 18 = GND (Kl.31).
+    </p>
   </section>
 
   <section class="block">
