@@ -194,6 +194,46 @@ class KombiPatcher:
         })
         print(f"    [+] 0xFB9FF0: Записано {len(shiftlight_code)} байт машинного кода F2MC в свободный карман H2")
 
+    def apply_telemetry_patch(self):
+        """
+        Патч независимого мультиплексора верхнего экрана (ОЖ / Масло / Бак / Скорость):
+          1. Инжекция кода обработчика mod_telemetry в Pocket H2 по адресу 0xFBA060
+          2. Хук в диспетчер нажатия кнопки BC (0xFDC1CD): перенаправление на mod_telemetry_bc_press
+        """
+        print("[*] Применение патча независимой телеметрии (Dual Paging)...")
+        # Машинный код модуля mod_telemetry (0xFBA060):
+        # Чтение ячейки страницы RAM [0x0EB5], циклический инкремент (0..4)
+        telemetry_code = [
+            0x17, 0x00,                         # LINK 0x00
+            0x52, 0xC7,                         # PUSHW RLST(0xC7)
+            0x76, 0x05, 0xB5, 0x0E,             # CMP [0x0EB5], #0x05
+            0x62, 0x00, 0x08,                   # BGE .reset_page
+            0x71, 0x01, 0xB5, 0x0E,             # INC [0x0EB5]
+            0x60, 0x00, 0x06,                   # BRA .exit
+            # .reset_page:
+            0x70, 0x00, 0xB5, 0x0E,             # MOV [0x0EB5], #0x00
+            # .exit:
+            0x6F, 0xC7,                         # POPW RLST(0xC7)
+            0x18,                               # UNLINK
+            0x0B                                # RETP
+        ]
+        self.parser.patch_bytes(0xFBA060, telemetry_code)
+
+        # Хук диспетчера BC кнопки по адресу 0xFDC1CD:
+        # Устанавливаем дальний вызов CALLP [0xFBA060] (опкод 0x12 60 A0 FB)
+        bc_hook_bytes = [0x12, 0x60, 0xA0, 0xFB]
+        self.parser.patch_bytes(0xFDC1CD, bc_hook_bytes)
+
+        self.applied_patches.append({
+            'name': 'Dual Sector Telemetry Multiplexer (Coolant / Oil / Tank / Speed)',
+            'changes': [
+                {'addr': '0xFBA060', 'bytes': len(telemetry_code), 'desc': 'Injected BC Paging handler into Pocket H2'},
+                {'addr': '0xFDC1CD', 'old': 'Original BC Dispatcher', 'new': 'CALLP [0xFBA060]'}
+            ]
+        })
+        print(f"    [+] 0xFBA060: Записано {len(telemetry_code)} байт обработчика телеметрии")
+        print("    [+] 0xFDC1CD: Установлен хук кнопки BC (CALLP [0xFBA060])")
+
     def print_summary(self):
         print("\n" + "=" * 60)
         print("          ОТЧЕТ ПАТЧЕРА ПРОШИВКИ BMW KOMBI")
@@ -209,7 +249,7 @@ def main():
     parser = argparse.ArgumentParser(description="BMW E90 Kombi (DKOML2) Firmware Patcher")
     parser.add_argument("-i", "--input", default="local-firmware/9283870A.0pa", help="Входной файл стоковой прошивки")
     parser.add_argument("-o", "--output-bin", default="kombi_custom_firmware.bin", help="Имя выходного бинарного файла для UART прошивки")
-    parser.add_argument("--all", action="store_true", default=True, help="Применить все модули (8-Speed, Shift-Light, Sweep)")
+    parser.add_argument("--all", action="store_true", default=True, help="Применить все модули (8-Speed, Shift-Light, Sweep, Telemetry)")
 
     args = parser.parse_args()
 
@@ -225,6 +265,7 @@ def main():
     patcher.apply_8speed_patch()
     patcher.apply_shiftlight_patch()
     patcher.apply_needle_sweep_patch()
+    patcher.apply_telemetry_patch()
 
     patcher.print_summary()
 
