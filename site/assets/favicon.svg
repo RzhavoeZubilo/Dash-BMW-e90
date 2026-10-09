@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" shape-rendering="crispEdges">
+<!-- Фавикон сайта: не стоковая иконка, а реальная "рамка передачи" щитка --
+     тот самый квадратик вокруг буквы D, который рисует прошивка DKOML2
+     (см. docs/research/ANALYSIS_NOTES.md, раздел про 0xFDBE94/0xFDBED7),
+     и тот же битмап-шрифт 5x7, что в tools/ui_simulator/index.html::FONT5x7. -->
+<rect width="36" height="36" fill="#0b0a08"/>
+<rect x="3" y="3" width="30" height="30" fill="none" stroke="#ff5e1a" stroke-width="3"/>
+<rect x="10.5" y="7.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="13.5" y="7.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="16.5" y="7.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="10.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="19.5" y="10.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="13.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="22.5" y="13.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="16.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="22.5" y="16.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="19.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="22.5" y="19.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="22.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="19.5" y="22.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="10.5" y="25.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="13.5" y="25.5" width="3" height="3" fill="#ff5e1a"/>
+<rect x="16.5" y="25.5" width="3" height="3" fill="#ff5e1a"/>
+</svg>
