@@ -55,19 +55,31 @@
         <tr><td style="width:220px"><strong>MCU</strong></td><td>Fujitsu/Spansion MB90F395HA (семейство MB90390)</td></tr>
         <tr><td><strong>Корпус</strong></td><td>LQFP-120, шаг 0.5 мм, 16×16 мм (код <code>FPT-120P-M21</code>)</td></tr>
         <tr><td><strong>Логический уровень I/O</strong></td><td><strong>5.0 В</strong> — джампер переходника USB-UART в положение 5V</td></tr>
-        <tr><td><strong>Интерфейс</strong></td><td>Встроенный Boot ROM по UART0 (асинхронный)</td></tr>
+        <tr><td><strong>Интерфейс</strong></td><td>Встроенный Boot ROM по UART4 (асинхронный) — <strong>не UART0</strong>, см. ниже</td></tr>
       </tbody>
     </table>
   </section>
 
   <section class="block">
     <h2>Распиновка (LQFP-120)</h2>
+    <div class="callout warn">
+      <strong>Правка 2026-10-11:</strong> выводы UART для Boot ROM —
+      <strong>SIN4 (Pin 52)</strong> и <strong>SOT4 (Pin 54)</strong>, а
+      также обязательные <strong>P00 (Pin 93 → +5V)</strong> и
+      <strong>P01 (Pin 94 → GND)</strong>. Старые <code>SIN0 (Pin 7)</code>/
+      <code>SOT0 (Pin 5)</code> — это общий UART0 штатного режима, Boot ROM
+      его не слушает. Найдено после многочасовой живой отладки: вся
+      остальная пайка (MD0/MD1/MD2/RST/GND, уровень 5В) была верна с
+      самого начала и не была причиной молчания — см. полную историю в
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/hardware/FUJITSU_MB90F395_UART_PINOUT.md">FUJITSU_MB90F395_UART_PINOUT.md</a>.
+    </div>
     <table class="ref">
       <thead><tr><th>Вывод</th><th>Имя</th><th>Назначение в штатном режиме</th><th>При программировании</th></tr></thead>
       <tbody>
-        <tr><td class="addr">Pin 7</td><td><code>SIN0 / P36</code></td><td>Вход UART0 RX («SIN input for UART 0»)</td><td>→ <strong>TXD</strong> переходника</td></tr>
-        <tr><td class="addr">Pin 5</td><td><code>SOT0 / P34</code></td><td>Выход UART0 TX («SOT output for UART 0»)</td><td>→ <strong>RXD</strong> переходника</td></tr>
-        <tr><td class="addr">Pin 6</td><td><code>SCK0 / P35</code></td><td>Такт синхронного режима UART0</td><td>не используется (async), не подключать</td></tr>
+        <tr style="background:var(--accent-soft)"><td class="addr">Pin 52</td><td><code>SIN4 / PB4</code></td><td>Вход UART4 RX («SIN input for Serial I/O 4»)</td><td>→ <strong>TXD</strong> переходника</td></tr>
+        <tr style="background:var(--accent-soft)"><td class="addr">Pin 54</td><td><code>SOT4 / PB6</code></td><td>Выход UART4 TX («SOT output for Serial I/O 4»)</td><td>→ <strong>RXD</strong> переходника</td></tr>
+        <tr style="background:var(--accent-soft)"><td class="addr">Pin 93</td><td><code>P00</code></td><td>GPIO общего назначения</td><td><strong>на +5V</strong> — обязателен для Boot ROM</td></tr>
+        <tr style="background:var(--accent-soft)"><td class="addr">Pin 94</td><td><code>P01</code></td><td>GPIO общего назначения</td><td><strong>на GND</strong> — обязателен для Boot ROM</td></tr>
         <tr><td class="addr">Pin 89</td><td><code>MD0</code></td><td>Mode Select 0</td><td>1 (подтянут к +5V на плате)</td></tr>
         <tr><td class="addr">Pin 88</td><td><code>MD1</code></td><td>Mode Select 1</td><td>1 (подтянут к +5V на плате)</td></tr>
         <tr style="background:var(--accent-soft)"><td class="addr">Pin 87</td><td><code>MD2</code></td><td>Mode Select 2</td><td><strong>замкнуть на GND</strong> — вход в Boot ROM</td></tr>
@@ -79,30 +91,38 @@
     <div class="callout warn">
       <strong>Не перепутайте:</strong> Pin 1 (<code>RX0</code>) и Pin 2
       (<code>TX0</code>) в даташите подписаны «for CAN Interface 0» — это
-      CAN-шина, не UART, несмотря на созвучное имя. Нужные нам выводы —
-      <strong>SIN0 (Pin 7)</strong> и <strong>SOT0 (Pin 5)</strong>, с именем
-      «UART 0», шестью выводами дальше.
+      CAN-шина, не UART, несмотря на созвучное имя. А <code>SIN0 (Pin 7)</code>/
+      <code>SOT0 (Pin 5)</code>, несмотря на название «UART 0», — тоже не то,
+      нужные выводы — <strong>SIN4 (Pin 52)</strong> и <strong>SOT4 (Pin 54)</strong>.
     </div>
     <div class="callout">
-      <strong>Ориентир при пайке:</strong> <code>SOT0(5)→SCK0(6)→SIN0(7)</code>
-      — три подряд идущих вывода на одной стороне корпуса.
-      <code>MD2(87)→MD1(88)→MD0(89)→RST(90)</code> — тоже четыре подряд
-      идущих вывода, на противоположной стороне. Нашли один вывод из
-      тройки/четвёрки — остальные считаются по соседству.
+      <strong>Ориентир при пайке:</strong>
+      <code>MD2(87)→MD1(88)→MD0(89)→RST(90)</code> — четыре подряд идущих
+      вывода на одной стороне корпуса, нашли один — остальные по соседству.
+      <code>SIN4(52)</code>/<code>SOT4(54)</code> на противоположной
+      стороне не подряд (между ними вывод 53, не используется); рядом с
+      ними, по данным iProg, есть ещё один подписанный <code>VSS</code> —
+      удобный ориентир для отсчёта.
     </div>
     <div class="callout">
       <strong>Режим Flash Serial Programming:</strong> штатно
-      <code>MD0=1, MD1=1, MD2=1</code>; для входа в загрузчик —
-      <code>MD0=1, MD1=1, MD2=0 (GND)</code>. Достаточно замкнуть
-      <strong>MD2 (Pin 87)</strong> на GND и кратковременно дёрнуть
-      <strong>RST (Pin 90)</strong>.
+      <code>MD0=1, MD1=1, MD2=1</code> (P00/P01 ни на что не влияют); для
+      входа в загрузчик — <code>MD0=1, MD1=1, MD2=0 (GND)</code>
+      <strong>и дополнительно P00=1 (+5V), P01=0 (GND)</strong>. Замкните
+      <strong>MD2 (Pin 87)</strong> и <strong>P01 (Pin 94)</strong> на GND,
+      подайте +5V на <strong>P00 (Pin 93)</strong>, и кратковременно
+      дёрните <strong>RST (Pin 90)</strong>.
     </div>
   </section>
 
   <section class="block">
     <h2>Схема подключения</h2>
+    <div class="callout warn">
+      Картинка ниже пока <strong>устарела</strong> (ещё старые Pin7/Pin5,
+      нет P00/P01) — ориентируйтесь на таблицу и текст выше/ниже, не на неё.
+    </div>
     <div style="background:#fff;border-radius:var(--radius);padding:12px;overflow-x:auto">
-      <img src="../assets/img/uart-wiring.svg" alt="Схема подключения USB-UART переходника к MB90F395HA: TXD→Pin7(SIN0), RXD←Pin5(SOT0), GND→Pin16(VSS) и далее на Pin87(MD2), GND разъёма X11175→Pin90(RST) кратковременно" style="width:100%;min-width:760px;display:block">
+      <img src="../assets/img/uart-wiring.svg" alt="Схема подключения USB-UART переходника к MB90F395HA (устарела, см. предупреждение выше — актуально: TXD→Pin52/SIN4, RXD←Pin54/SOT4, GND→Pin16, MD2→GND, P00→+5V, P01→GND)" style="width:100%;min-width:760px;display:block">
     </div>
     <p class="muted" style="margin-top:8px">
       VCC/5V переходника — не подключать к плате вообще. Питание платы —
@@ -114,11 +134,11 @@
     <h2>Порядок действий</h2>
     <ol>
       <li>Подайте штатное питание +12 В на разъём приборки X11175. Не подавайте +5V с переходника на плату — только сигнальные TXD/RXD/GND.</li>
-      <li>Припаяйте <strong>TXD→Pin 7, RXD→Pin 5, GND→Pin 16</strong>. MD2 пока не трогайте.</li>
+      <li>Припаяйте <strong>TXD→Pin 52 (SIN4), RXD→Pin 54 (SOT4), GND→Pin 16</strong>. MD2/P00/P01 пока не трогайте.</li>
       <li>Запустите скрипт чтения дампа — он должен ждать синхронизацию.</li>
-      <li>Замкните <strong>MD2 (Pin 87) на GND</strong>.</li>
+      <li>Замкните <strong>MD2 (Pin 87)</strong> и <strong>P01 (Pin 94)</strong> на GND, подайте <strong>+5V на P00 (Pin 93)</strong>.</li>
       <li>Только теперь — кратковременный импульс <strong>RST (Pin 90) на GND</strong> (или включите питание, если оно было выключено). Именно в этот момент Boot ROM проверяет MD0/MD1/MD2.</li>
-      <li>Отпаяйте перемычку с MD2 и перезагрузите плату, чтобы вернуть обычный режим.</li>
+      <li>Отпаяйте перемычки с MD2/P01 и перезагрузите плату, чтобы вернуть обычный режим.</li>
     </ol>
     <pre><code>python3 tools/fujitsu_uart_flasher/fujitsu_flasher.py -p /dev/tty.usbserial-XXXX -o kombi_dump.bin</code></pre>
   </section>
@@ -137,7 +157,7 @@
     <ol>
       <li>Выключите питание платы.</li>
       <li>Мультиметром в режиме прозвонки: один щуп на <strong>Pin 18 разъёма X11175</strong> (GND, известен точно) — второй щуп на кандидатов в VSS (Pin 16/47/106), пока не зазвенит.</li>
-      <li>От подтверждённого <strong>VSS (Pin 16)</strong> отсчитайте <strong>9 выводов</strong> в сторону Pin 1 — это <strong>SIN0 (Pin 7)</strong>; SOT0/SCK0 — его соседи. Короткое расстояние вместо подсчёта через весь периметр.</li>
+      <li>Для кластера <code>SIN4/SOT4 (Pin 52/54)</code> — на том же нижнем краю корпуса, по данным iProg, рядом подписан ещё один <code>VSS</code> (около Pin 46-47) — удобный короткий ориентир прямо у цели.</li>
       <li>Для кластера MD2/MD1/MD0/RST рядом в даташите есть <code>DVSS (Pin 86)</code> — отдельная земля буферов ШИМ-выходов. На простых платах обычно запаяна в ту же сеть GND, но сначала подтвердите это прозвонкой до основной VSS, прежде чем доверять ей как ориентиру.</li>
       <li>После каждой новой пайки — сразу прозвоните на отсутствие КЗ с соседними выводами.</li>
     </ol>
