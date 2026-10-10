@@ -90,7 +90,8 @@ class FujitsuFlasher:
             print("    Проверьте:")
             print("    1. Замкнут ли Pin 87 (MD2) на GND?")
             print("    2. Подано ли питание 12В на приборку (Pin 9: +12V, Pin 18: GND)?")
-            print("    3. Правильно ли подключены RX и TX (TX адаптера -> Pin 7, RX адаптера -> Pin 5)?")
+            print("    3. Правильно ли подключены RX и TX (TX адаптера -> Pin 52/SIN4, RX адаптера -> Pin 54/SOT4)?")
+            print("    4. Подключены ли P00 (Pin 93 -> +5V) и P01 (Pin 94 -> GND)? Без них Bootloader не стартует.")
             return False
 
         time.sleep(0.1)
