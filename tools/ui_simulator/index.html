@@ -3,818 +3,819 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BMW E90 DKOML2 - Virtual Cluster UI Simulator v5.0 (pixel-exact)</title>
-<script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+<title>BMW E90 cluster display simulator</title>
 <style>
-  /* Canvas с самим экраном -- НИКАКОГО blur/box-shadow/градиентов на нём,
-     только фон бленды корпуса вокруг. image-rendering: pixelated -- на
-     случай, если браузер всё же растянет canvas через CSS (у нас он
-     растянут не бывает: буфер canvas уже в целевом разрешении), оставлено
-     как страховка. */
-  canvas.lcd-canvas {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    background: #0d0400;
-    display: block;
+  :root {
+    --bg: #0b0a08; --panel: #141210; --panel-2: #1b1812; --border: #2b2520;
+    --text: #ece6da; --dim: #a99d8a; --accent: #ff5e1a; --accent-dim: #c94d16;
+    --accent-soft: rgba(255, 94, 26, 0.12);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   }
-  .lcd-bezel {
-    background: #000000;
-    border: 3px solid #1a1a1a;
-    box-shadow: inset 0 0 12px #000000;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px 16px 32px; background: var(--bg); color: var(--text);
+    font: 14px/1.5 var(--sans); user-select: none;
   }
+  .layout {
+    max-width: 1060px; margin: 0 auto; display: grid; gap: 20px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start;
+  }
+  @media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+  .cluster {
+    background: #050404; border: 4px solid #17130f; border-radius: 28px;
+    padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  canvas.lcd {
+    display: block; max-width: 100%; height: auto;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    background: #0d0400; border: 3px solid #1a1a1a; border-radius: 6px;
+  }
+  canvas.acc { border: 0; background: transparent; }
+
+  .status {
+    margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    font: 12px var(--mono); color: var(--dim);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px;
+  }
+  .status b { color: var(--accent); }
+  .note { margin-top: 10px; font-size: 12px; color: var(--dim); line-height: 1.45; }
+  .note strong { color: #e0b400; }
+
+  .controls {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 18px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .section { border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .hint { font-size: 11.5px; color: var(--dim); margin: 0; }
+  .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+  button {
+    font: 600 12px var(--sans); color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent-dim); }
+  button.on { background: var(--accent); border-color: var(--accent); color: #150a02; }
+  button.hot { color: var(--accent); border-color: var(--accent-dim); }
+  select, input[type=text] {
+    width: 100%; font: 12px var(--sans); color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px;
+  }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .avail { font: 11px var(--mono); color: var(--dim); min-height: 1.4em; }
+  .avail.ram { color: #7fd18b; } .avail.bus { color: #e0b400; } .avail.none { color: #ff7b6b; }
+  .legend { font-size: 11.5px; color: var(--dim); display: grid; gap: 2px; }
+  .legend span:nth-child(1) { color: #7fd18b; } .legend span:nth-child(2) { color: #e0b400; }
+  .legend span:nth-child(3) { color: #ff7b6b; }
+  .mono { font-family: var(--mono); color: var(--accent); font-weight: 700; }
+  label.check { display: flex; gap: 8px; align-items: center; font-size: 12px; cursor: pointer; }
 </style>
 </head>
-<body class="bg-black text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center font-sans antialiased select-none">
+<body>
 
-  <!-- Header -->
-  <div class="max-w-4xl w-full mb-3 text-center">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900 border border-stone-800 text-orange-500 text-xs font-mono mb-1">
-      BMW E90 DKOML2 Virtual Cluster UI Simulator v5.0 — pixel-exact canvas
+<div class="layout">
+
+  <div>
+    <div class="cluster">
+      <canvas id="accCanvas" class="lcd acc"></canvas>
+      <canvas id="upperCanvas" class="lcd"></canvas>
+      <canvas id="lowerCanvas" class="lcd"></canvas>
     </div>
-    <h1 class="text-xl font-bold tracking-tight text-white">Интерактивный симулятор приборной панели BMW E90</h1>
-    <p class="text-xs text-stone-400 max-w-xl mx-auto">
-      Экран рисуется через &lt;canvas&gt; жёсткими квадратами (без SVG/blur/сглаживания) —
-      см. предупреждение о точности ниже.
-    </p>
+    <div class="status">
+      <div>RPM <b id="statRpm">800</b></div>
+      <div><span data-t="gear"></span> <b id="statGear">D</b></div>
+      <div>SHIFT <b id="statShift"></b></div>
+    </div>
+    <p class="note" data-t="noteGrid"></p>
+    <p class="note" data-t="noteArt"></p>
   </div>
 
-  <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-    <!-- Cluster Central Display Unit (Left/Center Column) -->
-    <div class="lg:col-span-6 flex flex-col items-center">
-
-      <!-- Cluster Shell Bezel -->
-      <div class="bg-stone-950 p-6 rounded-3xl border-4 border-stone-900 shadow-2xl relative flex flex-col items-center">
-
-        <!-- Dial Rim Simulation (Left Speedo / Right Tach) -->
-        <div class="absolute -left-10 top-16 w-14 h-64 rounded-full border-r-4 border-orange-600/20 opacity-30 pointer-events-none"></div>
-        <div class="absolute -right-10 top-16 w-14 h-64 rounded-full border-l-4 border-orange-600/20 opacity-30 pointer-events-none"></div>
-
-        <!-- ================= ACC / FOLLOW-DISTANCE SEGMENT ICON =================
-             ПОДТВЕРЖДЕНО пользователем: это НЕ точечная матрица вообще, а
-             контрольные лампы за печатной подложкой с рисунком дороги и
-             машины (как у обычных сигнальных значков на панели) -- машина
-             и 4 трапеции дороги светятся по отдельности, подложка с рисунком
-             статична. Рисуем 4 РАЗДЕЛЬНЫЕ трапеции (не точки сетки) с
-             зазорами, как на фото. -->
-        <canvas id="accCanvas" class="lcd-canvas mb-1"></canvas>
-
-        <!-- ================= UPPER LCD (dot-matrix, pixel-exact canvas) ================= -->
-        <canvas id="upperCanvas" class="lcd-canvas lcd-bezel rounded-md mb-2"></canvas>
-
-        <!-- ================= LOWER LCD (dot-matrix, pixel-exact canvas) ================= -->
-        <canvas id="lowerCanvas" class="lcd-canvas lcd-bezel rounded-md"></canvas>
-
-      </div>
-
-      <!-- Realtime Status Banner -->
-      <div class="mt-3 text-xs font-mono text-stone-400 flex items-center gap-4 bg-stone-900 px-4 py-2 rounded-xl border border-stone-800">
-        <div>RPM: <span id="statRpm" class="text-orange-400 font-bold">800</span></div>
-        <div>ПЕРЕДАЧА: <span id="statGear" class="text-white font-bold">D</span></div>
-        <div>SHIFT: <span id="statShift" class="text-amber-400 font-bold">ВЫКЛ</span></div>
-      </div>
-
-      <div class="mt-2 max-w-xs text-[11px] leading-snug text-stone-500 text-center">
-        <strong class="text-amber-600">Пиксельная сетка — реконструкция, не ROM-дамп.</strong>
-        Точная видимая ширина/высота экрана в пикселях и физическая диагональ
-        в прошивке ещё не найдены (копали дизассемблером 2026-10-08 — см.
-        <code class="text-stone-400">docs/research/ANALYSIS_NOTES.md</code>).
-        Текущие <span id="resNote" class="text-stone-400"></span> — оценка по
-        пропорциям из сервис-мануала BMW, не измеренный факт.
-        <br>Зато <strong class="text-amber-600">подтверждено дизассемблером</strong>:
-        экран 4 бита на пиксель (16 уровней яркости, не 1-битный монохром) —
-        рендер этого пока не использует, цвет всегда "вкл/выкл".
-      </div>
-
+  <div class="controls">
+    <div class="row">
+      <span class="label" data-t="rpm"></span>
+      <span class="mono" id="rpmValue">800 RPM</span>
+    </div>
+    <input id="rpmSlider" type="range" min="0" max="6500" step="50" value="800">
+    <div class="seg">
+      <button class="rpm-preset" data-rpm="800">800</button>
+      <button class="rpm-preset" data-rpm="4100">4000</button>
+      <button class="rpm-preset" data-rpm="4600">4500</button>
+      <button class="rpm-preset" data-rpm="5050">5000</button>
+      <button class="rpm-preset hot" data-rpm="5300">5200 Shift!</button>
+      <button id="btnDemo" data-t="demo"></button>
     </div>
 
-    <!-- Controls Column (Right) -->
-    <div class="lg:col-span-6 bg-stone-900 border border-stone-800 p-5 rounded-2xl flex flex-col gap-4">
-
-      <div class="flex items-center justify-between border-b border-stone-800 pb-2">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-stone-300">Настройки стенда и эмулятора</h2>
-        <button id="btnDemoSweep" class="text-xs bg-orange-600 hover:bg-orange-500 text-white font-medium px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
-          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <span id="btnDemoText">Авто-Разгон</span>
-        </button>
-      </div>
-
-      <!-- 1. Tachometer RPM Control -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex justify-between items-center text-xs">
-          <label class="font-medium text-stone-300">Обороты двигателя (RPM):</label>
-          <span id="rpmValueDisplay" class="font-mono text-orange-400 font-bold text-sm">800 RPM</span>
-        </div>
-        <input id="rpmSlider" type="range" min="0" max="6500" step="50" value="800"
-               class="w-full h-2 bg-stone-800 rounded-lg appearance-none cursor-pointer accent-orange-500" />
-
-        <div class="grid grid-cols-5 gap-1 pt-1 text-[11px]">
-          <button class="rpm-preset bg-stone-800 hover:bg-stone-700 py-1 rounded text-stone-300" data-rpm="800">800</button>
-          <button class="rpm-preset bg-stone-800 hover:bg-stone-700 py-1 rounded text-stone-300" data-rpm="4100">4000 (1п)</button>
-          <button class="rpm-preset bg-stone-800 hover:bg-stone-700 py-1 rounded text-stone-300" data-rpm="4600">4500 (2п)</button>
-          <button class="rpm-preset bg-stone-800 hover:bg-stone-700 py-1 rounded text-stone-300" data-rpm="5050">5000 (3п)</button>
-          <button class="rpm-preset bg-orange-950 hover:bg-orange-900 text-orange-400 font-bold py-1 rounded border border-orange-800" data-rpm="5300">5200 (Shift!)</button>
+    <div class="section">
+      <div class="row">
+        <span class="label" data-t="selector"></span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="P">P</button><button data-mode="R">R</button>
+          <button data-mode="N">N</button><button data-mode="D" class="on">D</button>
+          <button data-mode="M">M</button>
         </div>
       </div>
-
-      <!-- 2. Gearbox Mode & Gears 1..8 -->
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-medium text-stone-300">Селектор коробки:</label>
-          <div class="flex gap-1">
-            <button class="gear-mode-btn bg-stone-800 py-1 px-2.5 rounded font-bold text-xs" data-mode="P">P</button>
-            <button class="gear-mode-btn bg-stone-800 py-1 px-2.5 rounded font-bold text-xs" data-mode="R">R</button>
-            <button class="gear-mode-btn bg-stone-800 py-1 px-2.5 rounded font-bold text-xs" data-mode="N">N</button>
-            <button class="gear-mode-btn bg-orange-600 text-white py-1 px-2.5 rounded font-bold text-xs shadow" data-mode="D">D</button>
-            <button class="gear-mode-btn bg-stone-800 py-1 px-2.5 rounded font-bold text-xs" data-mode="M">M</button>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between text-xs pt-1">
-          <span class="text-stone-400">Ступень (1..8):</span>
-          <div class="flex gap-1 font-mono">
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="1">1</button>
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="2">2</button>
-            <button class="gear-num-btn bg-orange-600 text-white py-0.5 px-2 rounded font-bold" data-num="3">3</button>
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="4">4</button>
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="5">5</button>
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="6">6</button>
-            <button class="gear-num-btn bg-stone-800 py-0.5 px-2 rounded" data-num="7">7</button>
-            <button class="gear-num-btn bg-orange-950 border border-orange-700 text-orange-400 font-bold py-0.5 px-2 rounded" data-num="8">8</button>
-          </div>
+      <div class="row">
+        <span class="label" data-t="gearNum"></span>
+        <div class="seg" id="numSeg">
+          <button data-num="1">1</button><button data-num="2">2</button>
+          <button data-num="3" class="on">3</button><button data-num="4">4</button>
+          <button data-num="5">5</button><button data-num="6">6</button>
+          <button data-num="7">7</button><button data-num="8" class="hot">8</button>
         </div>
       </div>
-
-      <!-- 3. Gear Style Switcher -->
-      <div class="flex flex-col gap-2 pt-2 border-t border-stone-800">
-        <label class="text-xs font-semibold text-stone-300 uppercase tracking-wider">Стиль отображения передач:</label>
-        <div class="grid grid-cols-3 gap-1.5 text-xs">
-          <button class="gear-style-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center" data-style="A">
-            Сток [ D ] (DKG)
-          </button>
-          <button class="gear-style-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center" data-style="B">
-            Alpina [ D3 ]
-          </button>
-          <button class="gear-style-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center" data-style="C">
-            Крупная без рамки
-          </button>
-        </div>
+      <div class="seg" id="styleSeg">
+        <button data-style="A" data-t="styleA"></button>
+        <button data-style="B" data-t="styleB"></button>
+        <button data-style="C" class="on" data-t="styleC"></button>
       </div>
-
-      <!-- 4a. Panel type: LOW (крупный растр) vs HIGH (мелкий растр) -->
-      <div class="flex flex-col gap-1.5 pt-2 border-t border-stone-800">
-        <label class="text-xs font-medium text-stone-300">
-          Тип приборки (растр LCD):
-        </label>
-        <div class="grid grid-cols-2 gap-1.5 text-xs">
-          <button class="panel-type-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center" data-type="LOW">
-            LOW — KOMBL2/BKOML2 (крупный)
-          </button>
-          <button class="panel-type-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center" data-type="HIGH">
-            HIGH — HKOML2/DKOML2 (мелкий)
-          </button>
-        </div>
-        <p class="text-[11px] text-stone-500">
-          Качественное отличие "крупнее/мельче" подтверждено (см. README),
-          но абсолютное число пикселей — нет. Сетка ниже честно показывает
-          только пропорцию, не измеренное разрешение.
-        </p>
-      </div>
-
-      <!-- 4. Upper & Lower LCD View Selectors -->
-      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-stone-800">
-
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-medium text-stone-300">Верхний экран:</label>
-          <select id="selectUpperScreen" class="bg-stone-800 border border-stone-700 text-white text-xs rounded-lg p-1.5 cursor-pointer">
-            <option value="1">Температура Масла (Сверху)</option>
-            <option value="0">Температура ОЖ (Сверху)</option>
-            <option value="2">Часы + Улица (Сток)</option>
-            <option value="3">Бак Л/П (Тест 06)</option>
-            <option value="4">Цифровая скорость</option>
-          </select>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-medium text-stone-300">Нижний экран (под передачей):</label>
-          <select id="selectLowerMid" class="bg-stone-800 border border-stone-700 text-white text-xs rounded-lg p-1.5 cursor-pointer">
-            <option value="range">Запас хода (Сток)</option>
-            <option value="coolant">Температура ОЖ (Иконка)</option>
-            <option value="oil">Температура Масла (Иконка)</option>
-            <option value="none">Только крупная передача</option>
-          </select>
-        </div>
-
-      </div>
-
-      <p class="text-[11px] text-stone-500 pt-1 border-t border-stone-800">
-        Иконки (термометр ОЖ, масленка, топливный насос) — битмапы из
-        <code class="text-stone-400">tools/bitmap_tool/bmw_icon_gen.py</code>,
-        подогнанные вручную по референсным фото щитка; это не экстракция из
-        ПЗУ прошивки.
-      </p>
-
+      <label class="check"><input type="checkbox" id="chkWarn"> <span data-t="warn"></span></label>
     </div>
 
+    <div class="section">
+      <span class="label" data-t="panel"></span>
+      <div class="seg" id="panelSeg">
+        <button data-type="LOW" data-t="panelLow"></button>
+        <button data-type="HIGH" class="on" data-t="panelHigh"></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid2">
+        <div class="field">
+          <span class="label" data-t="upper"></span>
+          <select id="selUpper"></select>
+          <input type="text" id="valUpper" spellcheck="false">
+          <div class="avail" id="availUpper"></div>
+        </div>
+        <div class="field">
+          <span class="label" data-t="lower"></span>
+          <select id="selLower"></select>
+          <input type="text" id="valLower" spellcheck="false">
+          <div class="avail" id="availLower"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span data-t="legRam"></span><span data-t="legBus"></span><span data-t="legNone"></span>
+      </div>
+    </div>
   </div>
 
-  <!-- ===================================================================
-       Pixel rendering engine. Никакого SVG/CSS-сглаживания для содержимого
-       экранов: все формы (текст, иконки, полоски ACC, рамка передачи)
-       рисуются как жёсткие квадраты через ctx.fillRect на реальном буфере
-       canvas (без масштабирования через CSS/браузер).
-       =================================================================== -->
-  <script>
-  (function () {
-    'use strict';
+</div>
 
-    // ---- Логическое разрешение экранов -----------------------------------
-    // НЕ подтверждено по ПЗУ прошивки (дизассемблер пока не нашёл буфер
-    // кадра/регистры LCD-контроллера) -- см. предупреждение в разметке.
-    // Базовая сетка подобрана по пропорциям из BMW TIS
-    // (mfp-tnu_e90_anzeige_bedien, стр. "LC display"): нижнее окно примерно
-    // в 2+ раза выше верхнего, оба окна одной ширины.
-    //
-    // LOW/HIGH: SP-Daten делит щитки PL2 на "крупный растр" (KOMBL2/BKOML2)
-    // и "мелкий растр" (HKOML2/DKOML2) -- это задокументированный
-    // качественный факт (docs/BMW_KOMBI_PL2_RESEARCH.md §2, перепроверено
-    // по .DAT файлам + независимо подтверждено статьёй про рамку передачи).
-    // Числа 0.32мм/0.5мм, которые раньше стояли у этого факта, в репозитории
-    // ничем не подтверждаются (см. правку в BMW_KOMBI_PL2_RESEARCH.md) --
-    // поэтому здесь взято НЕ абсолютное разрешение, а то же самое отношение
-    // "крупнее/мельче", отражённое в логической сетке при одинаковом
-    // физическом размере окна на экране (PX меняется обратно сетке).
-    var PANEL_PROFILES = {
-      HIGH: { upperW: 108, upperH: 28, lowerW: 108, lowerH: 64, accW: 108, accH: 46, px: 5,
-        label: 'HIGH (HKOML2/DKOML2) -- мелкий растр' },
-      LOW:  { upperW: 69,  upperH: 18, lowerW: 69,  lowerH: 41, accW: 69,  accH: 29, px: 8,
-        label: 'LOW (KOMBL2/BKOML2) -- крупный растр' }
-    };
+<script>
+(function () {
+  'use strict';
 
-    var UPPER_W, UPPER_H, LOWER_W, LOWER_H, ACC_W, ACC_H, PX;
-    var upperCtx, lowerCtx, accCtx;
-
-    var COLOR_ON = '#ff5e1a';
-    var COLOR_ON_DIM = 'rgba(255,94,26,0.16)'; // "выключенный" сегмент чуть виден, как на реальном LCD
-
-    function setupCanvas(el, w, h) {
-      el.width = w * PX;
-      el.height = h * PX;
-      el.style.width = (w * PX) + 'px';
-      el.style.height = (h * PX) + 'px';
-      var ctx = el.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
-      return ctx;
+  // ---------------------------------------------------------------- i18n --
+  var T = {
+    ru: {
+      gear: 'ПЕРЕДАЧА', rpm: 'Обороты двигателя', demo: 'Авто-разгон', stop: 'Стоп',
+      selector: 'Селектор', gearNum: 'Ступень', styleA: 'Сток [D] в рамке (DKG)',
+      styleB: 'Alpina D3', styleC: 'Крупная D + цифра', warn: 'Значок Check-Control (треугольник)',
+      panel: 'Тип приборки (растр LCD)', panelLow: 'LOW — KOMBL2/BKOML2 (крупный)',
+      panelHigh: 'HIGH — HKOML2/DKOML2 (мелкий)',
+      upper: 'Верхний экран', lower: 'Нижний экран, строка под передачей',
+      legRam: '● найдено в прошивке (адрес в RAM известен)',
+      legBus: '● приходит на приборку, адрес ещё не найден',
+      legNone: '● до приборки не доходит — нужен внешний источник',
+      off: 'ВЫКЛ', ready: 'ГОТОВ (<4000)', needM: 'ВКЛЮЧИТЕ M',
+      bars: function (n) { return n + ' ПОЛОСК' + (n === 1 ? 'А' : 'И'); }, strobe: 'СТРОБ ≥5200',
+      noteGrid: '<strong>Разрешение экрана — оценка, не дамп.</strong> Точное число точек в прошивке ' +
+        'пока не найдено; сетка подобрана по пропорциям из сервис-мануала и фото. ' +
+        'Сейчас: <span class="mono" id="resNote"></span>.',
+      noteArt: '<strong>Шрифт и иконки — реконструкция по фото реальных экранов</strong> ' +
+        '(штрих 2–3 точки, срезанные углы, рисунок значков по снимкам щитка), а не извлечение ' +
+        'знакогенератора из ПЗУ.',
+      p: {
+        coolant: 'Температура ОЖ', oil: 'Температура масла двигателя', battery: 'Напряжение бортсети',
+        fuel: 'Топливо в баке, л', outside: 'Наружная температура', clock: 'Часы + улица',
+        speed: 'Цифровая скорость', range: 'Запас хода', glat: 'Поперечное ускорение, g',
+        baro: 'Атм. давление (DME)', atf: 'Температура масла АКПП', none: '— пусто —'
+      },
+      a: {
+        ram: 'RAM 0x%s', bus: 'CAN %s', none: 'не на шине приборки', own: 'считает сама приборка'
+      }
+    },
+    en: {
+      gear: 'GEAR', rpm: 'Engine speed', demo: 'Auto sweep', stop: 'Stop',
+      selector: 'Selector', gearNum: 'Gear', styleA: 'Stock [D] boxed (DKG)',
+      styleB: 'Alpina D3', styleC: 'Large D + digit', warn: 'Check-Control icon (triangle)',
+      panel: 'Cluster type (LCD pitch)', panelLow: 'LOW — KOMBL2/BKOML2 (coarse)',
+      panelHigh: 'HIGH — HKOML2/DKOML2 (fine)',
+      upper: 'Upper display', lower: 'Lower display, row under the gear',
+      legRam: '● located in firmware (RAM address known)',
+      legBus: '● reaches the cluster, address not found yet',
+      legNone: '● never reaches the cluster — needs an external source',
+      off: 'OFF', ready: 'READY (<4000)', needM: 'SELECT M',
+      bars: function (n) { return n + ' BAR' + (n === 1 ? '' : 'S'); }, strobe: 'STROBE ≥5200',
+      noteGrid: '<strong>Display resolution is an estimate, not a dump.</strong> The exact dot count ' +
+        'has not been found in firmware yet; the grid follows proportions from the service manual ' +
+        'and photos. Current: <span class="mono" id="resNote"></span>.',
+      noteArt: '<strong>Font and icons are reconstructed from photos of real displays</strong> ' +
+        '(2–3 dot strokes, chamfered corners, icon shapes traced from cluster photos), not extracted ' +
+        'from the ROM character generator.',
+      p: {
+        coolant: 'Coolant temperature', oil: 'Engine oil temperature', battery: 'Battery voltage',
+        fuel: 'Fuel in tank, L', outside: 'Outside temperature', clock: 'Clock + outside',
+        speed: 'Digital speed', range: 'Range', glat: 'Lateral acceleration, g',
+        baro: 'Ambient pressure (DME)', atf: 'Transmission oil temperature', none: '— empty —'
+      },
+      a: {
+        ram: 'RAM 0x%s', bus: 'CAN %s', none: 'not on the cluster bus', own: 'computed by the cluster'
+      }
     }
+  };
 
-    function applyPanelProfile(profileKey) {
-      var p = PANEL_PROFILES[profileKey];
-      UPPER_W = p.upperW; UPPER_H = p.upperH;
-      LOWER_W = p.lowerW; LOWER_H = p.lowerH;
-      ACC_W = p.accW; ACC_H = p.accH;
-      PX = p.px;
-      upperCtx = setupCanvas(document.getElementById('upperCanvas'), UPPER_W, UPPER_H);
-      lowerCtx = setupCanvas(document.getElementById('lowerCanvas'), LOWER_W, LOWER_H);
-      accCtx = setupCanvas(document.getElementById('accCanvas'), ACC_W, ACC_H);
-      // Подтверждено пользователем (физически, по своей приборке): ACC/лампы
-      // дистанции стоят только на HIGH-щитках (HKOML2/DKOML2), на LOW
-      // (KOMBL2/BKOML2) этого узла нет вообще -- прячем канву, а не просто
-      // рисуем пустой.
-      document.getElementById('accCanvas').style.display = (profileKey === 'LOW') ? 'none' : '';
-      document.getElementById('resNote').textContent =
-        p.label + ': ' + UPPER_W + '×' + UPPER_H + ' / ' + LOWER_W + '×' + LOWER_H + ' лог.px (PX=' + PX + ')';
+  var LANG_KEY = 'dash-bmw-lang';
+  function detectLang() {
+    var q = /[?&]lang=(ru|en)/.exec(location.search);
+    if (q) return q[1];
+    try { var s = localStorage.getItem(LANG_KEY); if (s === 'ru' || s === 'en') return s; } catch (e) {}
+    return (navigator.language || '').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en';
+  }
+  var lang = detectLang();
+  function t(k) { return T[lang][k]; }
+
+  // ------------------------------------------------------------ canvases --
+  // Логическая сетка — оценка (см. noteGrid). LOW/HIGH: SP-Daten делит
+  // щитки PL2 на «крупный» и «мелкий» растр; абсолютное число точек не
+  // подтверждено, поэтому PX меняется обратно сетке при том же размере окна.
+  var PROFILES = {
+    HIGH: { upperW: 108, upperH: 28, lowerW: 108, lowerH: 64, accW: 108, accH: 46, px: 5 },
+    LOW:  { upperW: 69,  upperH: 18, lowerW: 69,  lowerH: 41, accW: 69,  accH: 29, px: 8 }
+  };
+  var P, PX, upperCtx, lowerCtx, accCtx;
+  var ON = '#ff5e1a', DIM = 'rgba(255,94,26,0.16)';
+
+  function setupCanvas(el, w, h) {
+    el.width = w * PX; el.height = h * PX;
+    el.style.width = (w * PX) + 'px';
+    var ctx = el.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    return ctx;
+  }
+
+  function applyProfile(key) {
+    P = PROFILES[key]; PX = P.px;
+    upperCtx = setupCanvas(document.getElementById('upperCanvas'), P.upperW, P.upperH);
+    lowerCtx = setupCanvas(document.getElementById('lowerCanvas'), P.lowerW, P.lowerH);
+    accCtx = setupCanvas(document.getElementById('accCanvas'), P.accW, P.accH);
+    document.getElementById('accCanvas').style.display = key === 'LOW' ? 'none' : '';
+  }
+
+  function px(ctx, x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * PX, y * PX, PX, PX);
+  }
+
+  // ---------------------------------------------------------------- fonts --
+  // Векторный дот-матричный шрифт. Глиф — ломаные на сетке 4×6 условных
+  // единиц; растеризуются штампом t×t точек вдоль отрезков (Брезенхем), так
+  // что у любого размера ровно такая толщина штриха, как на реальном экране
+  // (2 точки у цифр значений, 3 у крупной передачи), а не растянутый 5×7.
+  // Точка вида [x, y, dx, dy]: dx/dy — сдвиг в «шагах фаски» (1 точка при
+  // t<=2, 2 точки при t>=3) — этим делаются срезанные углы, как на фото.
+  function L() { return Array.prototype.slice.call(arguments); }
+  function box(x0, y0, x1, y1) {
+    return [[x0, y0, 1, 0], [x1, y0, -1, 0], [x1, y0, 0, 1], [x1, y1, 0, -1],
+            [x1, y1, -1, 0], [x0, y1, 1, 0], [x0, y1, 0, -1], [x0, y0, 0, 1], [x0, y0, 1, 0]];
+  }
+  var PSTEM = [[0, 6], [0, 0], [4, 0, -1, 0], [4, 0, 0, 1], [4, 3.2, 0, -1], [4, 3.2, -1, 0], [0, 3.2]];
+  var VGLYPHS = {
+    '0': [box(0, 0, 4, 6)],
+    '1': [L([1, 1.3], [2.6, 0], [2.6, 6])],
+    '2': [L([0, 1.3], [0, 0, 0, 1], [0, 0, 1, 0], [4, 0, -1, 0], [4, 0, 0, 1], [4, 2.3], [0, 5.3], [0, 6], [4, 6])],
+    '3': [L([0, 1.3], [0, 0, 0, 1], [0, 0, 1, 0], [4, 0, -1, 0], [4, 0, 0, 1], [4, 3, 0, -1], [4, 3, -1, 0], [1.4, 3]),
+          L([4, 3, -1, 0], [4, 3, 0, 1], [4, 6, 0, -1], [4, 6, -1, 0], [0, 6, 1, 0], [0, 6, 0, -1], [0, 4.7])],
+    '4': [L([3, 6], [3, 0], [0, 4.2], [4, 4.2])],
+    '5': [L([4, 0], [0, 0], [0, 2.8], [4, 2.8, -1, 0], [4, 2.8, 0, 1], [4, 6, 0, -1], [4, 6, -1, 0], [0, 6, 1, 0], [0, 6, 0, -1], [0, 4.9])],
+    '6': [L([4, 1.3], [4, 0, 0, 1], [4, 0, -1, 0], [0, 0, 1, 0], [0, 0, 0, 1], [0, 6, 0, -1], [0, 6, 1, 0],
+            [4, 6, -1, 0], [4, 6, 0, -1], [4, 2.8, 0, 1], [4, 2.8, -1, 0], [0, 2.8])],
+    '7': [L([0, 0], [4, 0], [4, 1.2], [1.6, 4.3], [1.6, 6])],
+    '8': [box(0, 0, 4, 3), box(0, 3, 4, 6)],
+    '9': [L([0, 4.7], [0, 6, 0, -1], [0, 6, 1, 0], [4, 6, -1, 0], [4, 6, 0, -1], [4, 0, 0, 1], [4, 0, -1, 0],
+            [0, 0, 1, 0], [0, 0, 0, 1], [0, 3.2, 0, -1], [0, 3.2, 1, 0], [4, 3.2])],
+    '-': [L([0.5, 3], [3.5, 3])],
+    '+': [L([0.5, 3], [3.5, 3]), L([2, 1.5], [2, 4.5])],
+    '.': { w: 0, s: [L([0, 6])] },
+    ':': { w: 0, s: [L([0, 1.8]), L([0, 4.4])] },
+    ' ': { w: 2, s: [] },
+    'P': [PSTEM],
+    'R': [PSTEM, L([1.8, 3.2], [4, 6])],
+    'N': [L([0, 6], [0, 0], [4, 6], [4, 0])],
+    'D': [L([0, 0], [4, 0, -2, 0], [4, 0, 0, 2], [4, 6, 0, -2], [4, 6, -2, 0], [0, 6], [0, 0])],
+    'S': [L([4, 1.3], [4, 0, 0, 1], [4, 0, -1, 0], [0, 0, 1, 0], [0, 0, 0, 1], [0, 3, 0, -1], [0, 3, 1, 0],
+            [4, 3, -1, 0], [4, 3, 0, 1], [4, 6, 0, -1], [4, 6, -1, 0], [0, 6, 1, 0], [0, 6, 0, -1], [0, 4.7])],
+    'M': [L([0, 6], [0, 0], [2, 3], [4, 0], [4, 6])],
+    'E': [L([4, 0], [0, 0], [0, 6], [4, 6]), L([0, 3], [3, 3])],
+    'L': [L([0, 0], [0, 6], [4, 6])]
+  };
+
+  function rasterVector(ch, f) {
+    var g = VGLYPHS[ch] || VGLYPHS[' '];
+    var strokes = Array.isArray(g) ? g : g.s;
+    var unitW = Array.isArray(g) ? 4 : g.w;
+    var W = unitW === 0 ? f.t : (unitW === 4 ? f.w : Math.round(f.w * unitW / 4));
+    var H = f.h, tk = f.t, chf = tk >= 3 ? 2 : 1;
+    var sx = unitW === 0 ? 0 : (W - tk) / unitW, sy = (H - tk) / 6;
+    var grid = [];
+    for (var y = 0; y < H; y++) { grid.push([]); for (var x = 0; x < W; x++) grid[y].push(false); }
+    function stamp(x, y) {
+      for (var dy = 0; dy < tk; dy++) for (var dx = 0; dx < tk; dx++) {
+        var gx = x + dx, gy = y + dy;
+        if (gx >= 0 && gy >= 0 && gx < W && gy < H) grid[gy][gx] = true;
+      }
     }
-
-    function clear(ctx, w, h) {
-      ctx.clearRect(0, 0, w * PX, h * PX);
+    function map(p) {
+      return [Math.round(p[0] * sx) + (p[2] || 0) * chf, Math.round(p[1] * sy) + (p[3] || 0) * chf];
     }
-
-    // Один логический пиксель -> жёсткий квадрат PX*PX, без интерполяции.
-    function px(ctx, x, y, color) {
-      ctx.fillStyle = color;
-      ctx.fillRect(Math.round(x) * PX, Math.round(y) * PX, PX, PX);
-    }
-
-    // ---- Текст: собственный блочный битмап-шрифт 5x7 (классика для
-    // точечных LCD/LED-индикаторов), а не растеризация системного шрифта.
-    // При растеризации TrueType-шрифта в 7-9 логических пикселей высоты
-    // внутренние просветы цифр ("0", "8") пропадают и буквы превращаются
-    // в сплошные коробки -- см. CHANGELOG симулятора. Битмап 5x7 масштабируется
-    // целым коэффициентом (каждая базовая точка -> NxN блок), поэтому
-    // одинаково чёткий что при увеличении x1, что x4 -- без антиалиасинга
-    // по построению, а не только "выключен сглаживанием".
-    // ЭТО НЕ ПРОШИВОЧНЫЙ ЗНАКОГЕНЕРАТОР BMW -- реальная таблица символов
-    // (в ПЗУ, формат описан в docs/BMW_KOMBI_PL2_RESEARCH.md как "таблица
-    // символов", 37/61 байт на HW-вариант) из ПЗУ ещё не извлечена.
-    var FONT5x7 = {
-      '0': ['01110','10001','10011','10101','11001','10001','01110'],
-      '1': ['00100','01100','00100','00100','00100','00100','01110'],
-      '2': ['01110','10001','00001','00010','00100','01000','11111'],
-      '3': ['11111','00010','00100','00010','00001','10001','01110'],
-      '4': ['00010','00110','01010','10010','11111','00010','00010'],
-      '5': ['11111','10000','11110','00001','00001','10001','01110'],
-      '6': ['00110','01000','10000','11110','10001','10001','01110'],
-      '7': ['11111','00001','00010','00100','01000','01000','01000'],
-      '8': ['01110','10001','10001','01110','10001','10001','01110'],
-      '9': ['01110','10001','10001','01111','00001','00010','01100'],
-      'P': ['11110','10001','10001','11110','10000','10000','10000'],
-      'R': ['11110','10001','10001','11110','10100','10010','10001'],
-      'N': ['10001','11001','11001','10101','10011','10011','10001'],
-      'D': ['11100','10010','10001','10001','10001','10010','11100'],
-      'S': ['01111','10000','10000','01110','00001','00001','11110'],
-      'M': ['10001','11011','10101','10101','10001','10001','10001'],
-      'C': ['01110','10001','10000','10000','10000','10001','01110'],
-      'L': ['10000','10000','10000','10000','10000','10000','11111'],
-      'k': ['10000','10000','10010','10100','11000','10100','10010'],
-      'm': ['00000','00000','11010','10101','10101','10101','10101'],
-      'h': ['10000','10000','10000','11110','10001','10001','10001'],
-      '.': ['00000','00000','00000','00000','00000','00110','00110'],
-      ':': ['00000','00110','00110','00000','00110','00110','00000'],
-      '-': ['00000','00000','00000','11111','00000','00000','00000'],
-      '+': ['00000','00100','00100','11111','00100','00100','00000'],
-      '/': ['00001','00010','00100','00100','01000','10000','00000'],
-      '°': ['01100','10010','10010','01100','00000','00000','00000'],
-      '_': ['00000','00000','00000','00000','00000','00000','11111'],
-      '>': ['00000','00100','00010','11111','00010','00100','00000'],
-      ' ': ['00000','00000','00000','00000','00000','00000','00000']
-    };
-
-    var glyphCache = {};
-    function glyphBitmap(ch, boxH) {
-      var key = ch + '@' + boxH;
-      if (glyphCache[key]) return glyphCache[key];
-
-      var base = FONT5x7[ch] || FONT5x7[' '];
-      var scale = Math.max(1, Math.round(boxH / 7));
-      var rows = [];
-      for (var by = 0; by < 7; by++) {
-        for (var sy = 0; sy < scale; sy++) {
-          var row = [];
-          for (var bx = 0; bx < 5; bx++) {
-            var on = base[by][bx] === '1';
-            for (var sx = 0; sx < scale; sx++) row.push(on);
-          }
-          rows.push(row);
+    strokes.forEach(function (poly) {
+      var a = map(poly[0]);
+      stamp(a[0], a[1]);
+      for (var i = 1; i < poly.length; i++) {
+        var b = map(poly[i]);
+        var x0 = a[0], y0 = a[1], x1 = b[0], y1 = b[1];
+        var dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0);
+        var stx = x0 < x1 ? 1 : -1, sty = y0 < y1 ? 1 : -1, err = dx + dy;
+        for (;;) {
+          stamp(x0, y0);
+          if (x0 === x1 && y0 === y1) break;
+          var e2 = 2 * err;
+          if (e2 >= dy) { err += dy; x0 += stx; }
+          if (e2 <= dx) { err += dx; y0 += sty; }
         }
+        a = b;
       }
-      var bmp = { w: 5 * scale, h: 7 * scale, rows: rows };
-      glyphCache[key] = bmp;
-      return bmp;
-    }
-
-    // Реальная высота отрисовки при запрошенном boxH: scale целочисленный
-    // и не меньше 1, поэтому при маленьком boxH (актуально для LOW-профиля)
-    // фактическая высота может оказаться БОЛЬШЕ запрошенной -- кто кладёт
-    // текст "от верха" фиксированным смещением, рискует вылезти за нижний
-    // край канвы. Используйте это при вёрстке нижних строк.
-    function glyphRenderedH(boxH) {
-      return 7 * Math.max(1, Math.round(boxH / 7));
-    }
-
-    // Возвращает суммарную ширину строки в логических пикселях (для центровки)
-    function textWidth(str, boxH, spacing) {
-      var w = 0;
-      for (var i = 0; i < str.length; i++) {
-        w += glyphBitmap(str[i], boxH).w + spacing;
-      }
-      return w - spacing;
-    }
-
-    function drawText(ctx, str, x, y, boxH, color, spacing) {
-      spacing = spacing === undefined ? 1 : spacing;
-      var cx = x;
-      for (var i = 0; i < str.length; i++) {
-        var bmp = glyphBitmap(str[i], boxH);
-        for (var ry = 0; ry < bmp.h; ry++) {
-          for (var rx = 0; rx < bmp.w; rx++) {
-            if (bmp.rows[ry][rx]) px(ctx, cx + rx, y + ry, color);
-          }
-        }
-        cx += bmp.w + spacing;
-      }
-      return cx - spacing;
-    }
-
-    function drawTextCentered(ctx, str, cx, y, boxH, color, spacing) {
-      var w = textWidth(str, boxH, spacing);
-      drawText(ctx, str, Math.round(cx - w / 2), y, boxH, color, spacing);
-    }
-
-    // ---- Иконки: температура масла/ОЖ -- перерисованы по реальным фото
-    // щитка с кастомной прошивкой Bimmerbit (~/Work/Develop/BMW/
-    // рендеры/2026-10-08 16.29.24.jpg и .41.jpg, см. zoom-кропы в журнале
-    // сессии). Предыдущая версия ("ASCII-битмап с каплей и ручкой канистры",
-    // 22x10) была собственной выдумкой прошлой сессии и выглядела как
-    // нечитаемое пятно -- на реальном щитке иконка масла ГОРАЗДО проще:
-    // вертикальный штрих-стрелка над пунктирной волной. Это тоже
-    // реконструкция по фотографии (не экстракция из ПЗУ), но хотя бы
-    // пиксель в пиксель повторяет то, что реально светится на приборке,
-    // а не абстрактную канистру.
-    var ICON_OIL = [
-      "....#....",
-      "....#....",
-      "....#....",
-      "...###...",
-      "....#....",
-      ".........",
-      ".#.#.#.#.",
-      "#.#.#.#.#",
-      "........."
-    ];
-    // Термометр ОЖ -- так же по фото (бленда-колба внизу, стебель вверх),
-    // упрощён относительно прежней версии с двойной волной (на реальном
-    // фото волна у значка ОЖ не прорисована отдельно от значка масла).
-    var ICON_COOLANT = [
-      "..#..",
-      ".###.",
-      ".#.#.",
-      ".#.#.",
-      ".#.#.",
-      ".#.#.",
-      "#####",
-      "##.##",
-      "#####"
-    ];
-    var ICON_PUMP = [
-      "...########...",
-      "..##########..",
-      "..##......##..",
-      "..##.####.##..",
-      "..##.####.###.",
-      "..##......#.##",
-      "..##########.#",
-      "..##......##.#",
-      "..##......##.#",
-      "..##......##.#",
-      "..##......##.#",
-      "..##......##.#",
-      "..##......##.#",
-      "..##......##.#",
-      ".############.",
-      "##############"
-    ];
-    // Силуэт машины сзади (для ACC-сегмента) -- простая реконструкция по фото.
-    var ICON_CAR_REAR = [
-      "...######...",
-      "..########..",
-      "..#.####.#..",
-      "#..######..#",
-      "############"
-    ];
-
-    // scale -- во сколько логических пикселей рисуется одна ячейка иконки
-    // (по умолчанию 1:1). Иконки должны масштабироваться вместе с текстом
-    // при переключении LOW/HIGH -- иначе на мелкой сетке LOW они съедают
-    // непропорционально много места и наезжают на соседний текст.
-    function drawIcon(ctx, rows, x, y, color, scale) {
-      scale = scale || 1;
-      for (var ry = 0; ry < rows.length; ry++) {
-        for (var rx = 0; rx < rows[ry].length; rx++) {
-          if (rows[ry][rx] === '#') {
-            for (var sy = 0; sy < scale; sy++) {
-              for (var sx = 0; sx < scale; sx++) {
-                px(ctx, x + rx * scale + sx, y + ry * scale + sy, color);
-              }
-            }
-          }
-        }
-      }
-    }
-    function iconW(rows, scale) { return rows[0].length * (scale || 1); }
-    function iconH(rows, scale) { return rows.length * (scale || 1); }
-
-    // ---- ACC / индикатор дистанции: контрольные лампы за печатной
-    // подложкой (не точечная матрица), 4 РАЗДЕЛЬНЫХ трапеции с зазором
-    // между ними (как на реальном фото), не перекрывающиеся линии. Рисуем через
-    // полигон (жёсткая заливка, без сглаживания контура -- canvas и так не
-    // антиалиасит заливку многоугольника, если не просить явно).
-    // Растеризуем трапецию САМИ, построчно по логическим пикселям, и красим
-    // целыми fillRect-ами -- в отличие от ctx.fill() по path (который canvas
-    // всегда сглаживает на диагоналях), так грани получаются ступенчатыми,
-    // как у остального дот-матричного рендера, без антиалиасинга.
-    function fillTrapezoid(ctx, topY, botY, topHalfW, botHalfW, cx, color) {
-      ctx.fillStyle = color;
-      var y0 = Math.round(topY), y1 = Math.round(botY);
-      for (var y = y0; y < y1; y++) {
-        var t = (y - topY) / (botY - topY);
-        var halfW = Math.round(topHalfW + (botHalfW - topHalfW) * t);
-        var xLeft = Math.round(cx - halfW);
-        ctx.fillRect(xLeft * PX, y * PX, halfW * 2 * PX, PX);
-      }
-    }
-
-    function drawAcc(litCount) {
-      clear(accCtx, ACC_W, ACC_H);
-      var cx = ACC_W / 2;
-      var s = ACC_H / 46; // масштаб относительно базовой (HIGH) сетки
-
-      drawIcon(accCtx, ICON_CAR_REAR, Math.round(cx - iconW(ICON_CAR_REAR, s) / 2), Math.round(2 * s),
-        litCount > 0 ? COLOR_ON : COLOR_ON_DIM, s);
-
-      // 4 трапеции (не 5 -- пересчитано по реальному фото пользователя),
-      // сужаются к верху (к машине), с зазором GAP между рядами.
-      var bars = 4;
-      var topY = 12 * s, botY = ACC_H - 2 * s;
-      var totalH = botY - topY;
-      var gap = 3 * s;
-      var rowH = (totalH - gap * (bars - 1)) / bars;
-      for (var i = 0; i < bars; i++) {
-        var rTop = topY + i * (rowH + gap);
-        var rBot = rTop + rowH;
-        var topHalfW = (4 + i * 7) * s;
-        var botHalfW = (4 + (i + 1) * 7) * s;
-        var on = i < litCount;
-        fillTrapezoid(accCtx, rTop, rBot, topHalfW, botHalfW, cx, on ? COLOR_ON : COLOR_ON_DIM);
-      }
-    }
-
-    // ---- Верхний экран -----------------------------------------------------
-    function drawUpper(screenMode, data) {
-      clear(upperCtx, UPPER_W, UPPER_H);
-      var cx = UPPER_W / 2;
-      var s = UPPER_H / 28; // масштаб относительно базовой (HIGH) сетки
-      function S(v) { return Math.round(v * s); }
-
-      if (screenMode === 2) { // Часы + улица
-        drawTextCentered(upperCtx, data.time, cx, S(2), S(14), COLOR_ON, 1);
-        drawTextCentered(upperCtx, data.outTemp, cx, S(18), S(9), COLOR_ON, 1);
-      } else if (screenMode === 1 || screenMode === 0) { // масло / ОЖ
-        var icon = screenMode === 1 ? ICON_OIL : ICON_COOLANT;
-        var iw = iconW(icon, s);
-        drawIcon(upperCtx, icon, Math.round(cx - iw / 2), S(1), COLOR_ON, s);
-        drawTextCentered(upperCtx, data.tempValue + '°C', cx, S(13), S(13), COLOR_ON, 1);
-      } else if (screenMode === 3) { // бак Л/П
-        drawIcon(upperCtx, ICON_PUMP, S(2), S(1), COLOR_ON, s);
-        drawText(upperCtx, 'L' + data.tankL, S(20), S(4), S(9), COLOR_ON, 1);
-        drawText(upperCtx, 'R' + data.tankR, S(20), S(16), S(9), COLOR_ON, 1);
-      } else if (screenMode === 4) { // цифровая скорость
-        drawTextCentered(upperCtx, data.speed, cx, S(1), S(18), COLOR_ON, 1);
-        drawTextCentered(upperCtx, 'km/h', cx, S(20), S(7), COLOR_ON, 1);
-      }
-    }
-
-    // ---- Нижний экран: рамка передачи рисуем ПРЯМЫМИ линиями (как в
-    // реале -- подпрограммы 0xFDBE94/0xFDBED7 чертят ровно 2 гориз. + 2
-    // вертик. линии вокруг символа, см. docs/research/HANDOFF.md), а не
-    // скруглённым CSS-бордером. -----------------------------------------
-    function strokeRectHard(ctx, x0, y0, x1, y1, color) {
-      for (var x = x0; x <= x1; x++) { px(ctx, x, y0, color); px(ctx, x, y1, color); }
-      for (var y = y0; y <= y1; y++) { px(ctx, x0, y, color); px(ctx, x1, y, color); }
-    }
-
-    function drawLower(style, mode, gearNum, mid, data) {
-      clear(lowerCtx, LOWER_W, LOWER_H);
-      var cx = LOWER_W / 2;
-      var s = LOWER_H / 64; // масштаб относительно базовой (HIGH) сетки
-      function S(v) { return Math.round(v * s); }
-      // На LOW-профиле (69x41) три строки нижнего экрана, рассчитанные по
-      // пропорции от HIGH, физически не помещаются без наложения: битмап-
-      // шрифт не сжимается плавно (минимум 7px на "ступень" -- см.
-      // glyphRenderedH), поэтому у коротких HIGH-строк ниже свободного места,
-      // чем нужно их уменьшенным аналогам. На HIGH ветка ниже не меняет
-      // ничего (все clamp'ы заведомо не срабатывают при s=1, числа совпадают
-      // с прежними константами), на LOW -- не даёт строкам залезть друг на
-      // друга (ценой лёгкого поджатия/обрезки снизу вместо нечитаемой каши).
-      var isLow = (LOWER_H < 64);
-
-      // --- gear area ---
-      var label = mode;
-      var gearBottom;
-      if (style === 'A') {
-        label = (mode === 'M') ? ('M' + gearNum) : mode;
-        var h = S(24), renderedH = glyphRenderedH(h);
-        var w = textWidth(label, h, 1) + S(10);
-        var x0 = Math.round(cx - w / 2), y0 = S(3);
-        drawTextCentered(lowerCtx, label, cx, y0 + S(5), h, COLOR_ON, 1);
-        strokeRectHard(lowerCtx, x0, y0, x0 + w, y0 + h + S(4), COLOR_ON);
-        gearBottom = y0 + h + S(4);
-      } else if (style === 'B') {
-        if (mode === 'D') label = 'D' + gearNum;
-        else if (mode === 'M') label = 'S' + gearNum;
-        var h2 = S(26), y02 = S(4);
-        drawTextCentered(lowerCtx, label, cx, y02, h2, COLOR_ON, 1);
-        gearBottom = y02 + glyphRenderedH(h2);
-      } else { // C: крупная буква + мелкая цифра снизу-справа
-        if (mode === 'M') {
-          var h3 = S(28), y03 = S(2);
-          drawTextCentered(lowerCtx, String(gearNum), cx, y03, h3, COLOR_ON, 1);
-          label = String(gearNum);
-          gearBottom = y03 + glyphRenderedH(h3);
-        } else if (mode === 'D') {
-          var mainH = S(28), y0d = S(2);
-          var mainW = textWidth('D', mainH, 0);
-          var subH = S(14);
-          var subW = textWidth(String(gearNum), subH, 0);
-          var totalW = mainW + S(2) + subW;
-          var startX = Math.round(cx - totalW / 2);
-          drawText(lowerCtx, 'D', startX, y0d, mainH, COLOR_ON, 0);
-          drawText(lowerCtx, String(gearNum), startX + mainW + S(2), S(16), subH, COLOR_ON, 0);
-          label = 'D' + gearNum;
-          gearBottom = y0d + glyphRenderedH(mainH);
-        } else {
-          var h4 = S(28), y04 = S(2);
-          drawTextCentered(lowerCtx, mode, cx, y04, h4, COLOR_ON, 1);
-          label = mode;
-          gearBottom = y04 + glyphRenderedH(h4);
-        }
-      }
-      document.getElementById('statGear').textContent = label;
-
-      // --- mid telemetry row ---
-      var midY = S(38);
-      if (isLow) midY = Math.max(midY, gearBottom + S(4));
-      var midTextRH = glyphRenderedH(S(11));
-      var midIconRH = mid === 'range' ? iconH(ICON_PUMP, s)
-        : mid === 'coolant' ? iconH(ICON_COOLANT, s)
-        : iconH(ICON_OIL, s);
-      var midRowBottom = midY + Math.max(midTextRH, midIconRH);
-      if (mid === 'range') {
-        drawIcon(lowerCtx, ICON_PUMP, S(6), midY, COLOR_ON, s);
-        drawText(lowerCtx, data.range + ' km', S(24), midY + S(2), S(11), COLOR_ON, 1);
-      } else if (mid === 'coolant') {
-        drawIcon(lowerCtx, ICON_COOLANT, S(6), midY - S(1), COLOR_ON, s);
-        drawText(lowerCtx, data.coolant + '°C', S(28), midY + S(2), S(11), COLOR_ON, 1);
-      } else if (mid === 'oil') {
-        drawIcon(lowerCtx, ICON_OIL, S(6), midY + S(1), COLOR_ON, s);
-        drawText(lowerCtx, data.oilTemp + '°C', S(34), midY + S(2), S(11), COLOR_ON, 1);
-      }
-
-      // --- divider + odometer row: ПРИВЯЗАНО К НИЗУ канвы, не к сетке
-      // сверху -- при маленьком boxH (LOW-профиль) реальная высота глифа
-      // не сжимается ниже 7px (см. glyphRenderedH), и текст, положенный
-      // фиксированным смещением "от верха", вылезал за нижний край канвы
-      // и обрезался. ---
-      var odoH = S(9);
-      var odoRenderedH = glyphRenderedH(odoH);
-      var odoY = LOWER_H - odoRenderedH - S(1);
-      var divY = odoY - S(3);
-      if (isLow) {
-        divY = Math.max(divY, midRowBottom + S(2));
-        odoY = Math.max(odoY, divY + S(3));
-      }
-      for (var x = 2; x < LOWER_W - 2; x += 2) px(lowerCtx, x, divY, COLOR_ON_DIM);
-      var odoX = S(4);
-      var odoW = textWidth(data.odo, odoH, 1);
-      var tripW = textWidth(data.trip, odoH, 1);
-      // Обычно пробег слева, суточный счётчик прижат вправо -- так на
-      // реальном щитке. Но на узкой сетке (LOW-профиль) оба текста рядом
-      // физически не влезают -- тогда не даём им наложиться, ставим
-      // суточный счётчик сразу после пробега с небольшим зазором.
-      var tripX = Math.max(LOWER_W - S(4) - tripW, odoX + odoW + S(3));
-      drawText(lowerCtx, data.odo, odoX, odoY, odoH, COLOR_ON, 1);
-      drawText(lowerCtx, data.trip, tripX, odoY, odoH, COLOR_ON, 1);
-    }
-
-    // ---- state & wiring (логика управления не менялась, только рендер) ---
-    var state = {
-      rpm: 800,
-      mode: 'D',
-      gearNum: 3,
-      gearStyle: 'C',
-      panelType: 'HIGH',
-      upperScreen: 1,
-      lowerMid: 'range',
-      demoRunning: false,
-      demoInterval: null
-    };
-
-    applyPanelProfile(state.panelType);
-
-    Array.prototype.forEach.call(document.querySelectorAll('.panel-type-btn'), function (btn) {
-      btn.addEventListener('click', function () {
-        Array.prototype.forEach.call(document.querySelectorAll('.panel-type-btn'), function (b) {
-          b.className = 'panel-type-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center';
-        });
-        btn.className = 'panel-type-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center';
-        state.panelType = btn.dataset.type;
-        applyPanelProfile(state.panelType);
-        updateClusterUI();
-      });
     });
+    return { w: W, h: H, rows: grid };
+  }
 
-    var fixedData = {
-      time: '19:34', outTemp: '+22.0°C',
-      tempValue: '35', tankL: '21.4', tankR: '23.8', speed: '115',
-      range: '315', coolant: '51', oilTemp: '95',
-      odo: '234400', trip: '000.0'
-    };
+  // Мелкий шрифт единиц измерения (km, °C, V, L, km/h) — штрих 1 точка.
+  var SMALL = {
+    '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+    '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    '5': ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+    '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+    'k': ['1000', '1000', '1001', '1010', '1100', '1010', '1001'],
+    'm': ['00000', '00000', '11010', '10101', '10101', '10101', '10101'],
+    'h': ['1000', '1000', '1110', '1001', '1001', '1001', '1001'],
+    'l': ['11', '01', '01', '01', '01', '01', '01'],
+    'b': ['1000', '1000', '1110', '1001', '1001', '1001', '1110'],
+    'a': ['0000', '0000', '0110', '0001', '0111', '1001', '0111'],
+    'r': ['000', '000', '101', '110', '100', '100', '100'],
+    'g': ['0000', '0000', '0111', '1001', '0111', '0001', '0110'],
+    'C': ['0111', '1000', '1000', '1000', '1000', '1000', '0111'],
+    'V': ['10001', '10001', '10001', '01010', '01010', '00100', '00100'],
+    'L': ['1000', '1000', '1000', '1000', '1000', '1000', '1111'],
+    '°': ['010', '101', '010', '000', '000', '000', '000'],
+    '/': ['001', '001', '010', '010', '010', '100', '100'],
+    '.': ['0', '0', '0', '0', '0', '0', '1'],
+    '-': ['000', '000', '000', '111', '000', '000', '000'],
+    ' ': ['00', '00', '00', '00', '00', '00', '00']
+  };
+  function rasterSmall(ch) {
+    var rows = SMALL[ch] || SMALL[' '];
+    return { w: rows[0].length, h: 7, rows: rows.map(function (r) {
+      return r.split('').map(function (c) { return c === '1'; });
+    }) };
+  }
 
-    function updateClusterUI() {
-      document.getElementById('rpmValueDisplay').textContent = state.rpm + ' RPM';
-      document.getElementById('statRpm').textContent = state.rpm;
-
-      var isManual = (state.mode === 'M');
-      var lit = 0;
-      var strobe = false;
-      var shiftText = 'ВЫКЛ';
-      if (isManual && state.rpm >= 5200) { lit = 5; strobe = true; shiftText = 'СТРОБОСКОП (≥5200)'; }
-      else if (isManual && state.rpm >= 5000) { lit = 3; shiftText = '3 ПОЛОСКИ (5000)'; }
-      else if (isManual && state.rpm >= 4500) { lit = 2; shiftText = '2 ПОЛОСКИ (4500)'; }
-      else if (isManual && state.rpm >= 4000) { lit = 1; shiftText = '1 ПОЛОСКА (4000)'; }
-      else { shiftText = isManual ? 'ГОТОВ (<4000)' : 'ВКЛЮЧИТЕ [M]'; }
-      document.getElementById('statShift').textContent = shiftText;
-
-      if (state.panelType !== 'LOW') {
-        drawAcc(strobe ? (Math.floor(Date.now() / 100) % 2 === 0 ? 5 : 0) : lit);
+  var cache = {};
+  function glyph(ch, f) {
+    var key = ch + '|' + (f.small ? 's' : f.w + 'x' + f.h + 't' + f.t);
+    if (!cache[key]) cache[key] = f.small ? rasterSmall(ch) : rasterVector(ch, f);
+    return cache[key];
+  }
+  function textW(str, f) {
+    var w = 0;
+    for (var i = 0; i < str.length; i++) w += glyph(str[i], f).w + f.gap;
+    return str.length ? w - f.gap : 0;
+  }
+  function fontH(f) { return f.small ? 7 : f.h; }
+  function drawText(ctx, str, x, y, f, color) {
+    var cx = x;
+    for (var i = 0; i < str.length; i++) {
+      var g = glyph(str[i], f);
+      for (var ry = 0; ry < g.h; ry++) for (var rx = 0; rx < g.w; rx++) {
+        if (g.rows[ry][rx]) px(ctx, cx + rx, y + ry, color || ON);
       }
-      drawUpper(state.upperScreen, fixedData);
-      drawLower(state.gearStyle, state.mode, state.gearNum, state.lowerMid, fixedData);
+      cx += g.w + f.gap;
     }
+    return cx - f.gap;
+  }
 
-    var strobeTimer = null;
-    function ensureStrobeLoop() {
-      if (strobeTimer) return;
-      strobeTimer = setInterval(function () {
-        if (state.mode === 'M' && state.rpm >= 5200) updateClusterUI();
-      }, 100);
+  var FONTS = {
+    HIGH: {
+      small: { small: true, gap: 1 },
+      med:   { w: 7, h: 12, t: 2, gap: 1 },
+      big:   { w: 14, h: 24, t: 3, gap: 2 },
+      boxed: { w: 11, h: 18, t: 3, gap: 2 },
+      sub:   { w: 7, h: 12, t: 2, gap: 1 }
+    },
+    LOW: {
+      small: { small: true, gap: 1 },
+      med:   { w: 5, h: 9, t: 1, gap: 1 },
+      big:   { w: 9, h: 15, t: 2, gap: 1 },
+      boxed: { w: 7, h: 11, t: 2, gap: 1 },
+      sub:   { w: 5, h: 9, t: 1, gap: 1 }
     }
-    ensureStrobeLoop();
+  };
 
-    document.getElementById('rpmSlider').addEventListener('input', function (e) {
-      state.rpm = parseInt(e.target.value, 10);
-      updateClusterUI();
-    });
+  // ---------------------------------------------------------------- icons --
+  // Перерисованы по фото реальных экранов (крупные кропы снимков щитка):
+  // термометр ОЖ с тремя рисками над волнами, маслёнка с крышкой, носиком
+  // и каплей над волной, аккумулятор с клеммами и «− +», сплошной
+  // треугольник с вырезанным «!». Не извлечены из ПЗУ.
+  var ICONS = {
+    coolant: [
+      '........#####.....',
+      '........##........',
+      '........####......',
+      '........##........',
+      '........#####.....',
+      '........##........',
+      '.......####.......',
+      '......######......',
+      '.......####.......',
+      '..##....##....##..',
+      '##..####..####..##',
+      '..##....##....##..',
+      '##..####..####..##'
+    ],
+    oil: [
+      '........######........',
+      '..........##..........',
+      '##.....##########...##',
+      '#.#...##........##.##.',
+      '.#.#.##..........###..',
+      '..#.##............#...',
+      '...##.............#.#.',
+      '....###############.#.',
+      '...................###',
+      '......................',
+      '..##....##....##....##',
+      '##..####..####..####..'
+    ],
+    battery: [
+      '..###.....###..',
+      '###############',
+      '##...........##',
+      '##.......#...##',
+      '##.###.#####.##',
+      '##.......#...##',
+      '##...........##',
+      '###############',
+      '###############'
+    ],
+    fuel: [
+      '#######...',
+      '##...##...',
+      '##...##.#.',
+      '#######..#',
+      '#######..#',
+      '#######..#',
+      '#######..#',
+      '#######.##',
+      '#######...',
+      '#########.'
+    ],
+    warn: [
+      '......#......',
+      '.....###.....',
+      '.....###.....',
+      '....##.##....',
+      '....##.##....',
+      '...###.###...',
+      '...###.###...',
+      '..#########..',
+      '..####.####..',
+      '.###########.',
+      '#############'
+    ],
+    car: [
+      '...######...',
+      '..########..',
+      '..#.####.#..',
+      '#..######..#',
+      '############'
+    ]
+  };
+  function iconW(k) { return ICONS[k][0].length; }
+  function iconH(k) { return ICONS[k].length; }
+  function drawIcon(ctx, k, x, y, color) {
+    var rows = ICONS[k];
+    for (var ry = 0; ry < rows.length; ry++) for (var rx = 0; rx < rows[ry].length; rx++) {
+      if (rows[ry][rx] === '#') px(ctx, x + rx, y + ry, color || ON);
+    }
+  }
 
-    Array.prototype.forEach.call(document.querySelectorAll('.rpm-preset'), function (btn) {
-      btn.addEventListener('click', function () {
-        state.rpm = parseInt(btn.dataset.rpm, 10);
-        document.getElementById('rpmSlider').value = state.rpm;
-        updateClusterUI();
-      });
-    });
+  // ------------------------------------------------------------ parameters --
+  // Доступность — по docs/DISPLAYABLE_PARAMETERS.md: ram — адрес значения в
+  // прошивке найден; bus — сообщение адресовано приборке (DBC), распаковщик
+  // не найден; own — величину считает/меряет сама приборка; none — на шину
+  // приборки не попадает.
+  var PARAMS = {
+    coolant: { icon: 'coolant', value: '90', unit: '°C', av: 'ram', ref: '413A' },
+    oil:     { icon: 'oil', value: '105', unit: '°C', av: 'bus', ref: '0x1D0 B1' },
+    battery: { icon: 'battery', value: '14.5', unit: 'V', av: 'ram', ref: '0FA0' },
+    fuel:    { icon: 'fuel', value: '38.8', unit: 'L', av: 'own' },
+    outside: { icon: null, value: '-4.0', unit: '°C', av: 'own' },
+    range:   { icon: 'fuel', value: '315', unit: 'km', av: 'own' },
+    glat:    { icon: null, value: '0.42', unit: 'g', av: 'bus', ref: '0x1A0' },
+    baro:    { icon: null, value: '1013', unit: 'hPa', av: 'bus', ref: '0x1D0 B3' },
+    atf:     { icon: null, value: '78', unit: '°C', av: 'none' }
+  };
+  var UPPER_OPTS = ['coolant', 'oil', 'battery', 'fuel', 'outside', 'clock', 'speed', 'range', 'glat', 'baro', 'atf'];
+  var LOWER_OPTS = ['coolant', 'oil', 'battery', 'fuel', 'outside', 'range', 'glat', 'baro', 'atf', 'none'];
 
-    Array.prototype.forEach.call(document.querySelectorAll('.gear-mode-btn'), function (btn) {
-      btn.addEventListener('click', function () {
-        Array.prototype.forEach.call(document.querySelectorAll('.gear-mode-btn'), function (b) {
-          b.className = 'gear-mode-btn bg-stone-800 py-1 px-2.5 rounded font-bold text-xs';
-        });
-        btn.className = 'gear-mode-btn bg-orange-600 text-white py-1 px-2.5 rounded font-bold text-xs shadow';
-        state.mode = btn.dataset.mode;
-        updateClusterUI();
-      });
-    });
+  var state = {
+    rpm: 800, mode: 'D', gearNum: 3, style: 'C', panel: 'HIGH', warn: false,
+    upper: 'coolant', lower: 'battery',
+    upperVal: null, lowerVal: null, clock: '16:38', speed: '100',
+    odo: '218016', trip: '003.1', demo: null
+  };
 
-    Array.prototype.forEach.call(document.querySelectorAll('.gear-num-btn'), function (btn) {
-      btn.addEventListener('click', function () {
-        Array.prototype.forEach.call(document.querySelectorAll('.gear-num-btn'), function (b) {
-          b.classList.remove('bg-orange-600', 'text-white', 'font-bold');
-          if (!b.classList.contains('border-orange-700')) b.classList.add('bg-stone-800');
-        });
-        btn.classList.add('bg-orange-600', 'text-white', 'font-bold');
-        state.gearNum = parseInt(btn.dataset.num, 10);
-        updateClusterUI();
-      });
-    });
+  function valueOf(key, override) {
+    if (override !== null && override !== '') return override;
+    if (key === 'clock') return state.clock;
+    if (key === 'speed') return state.speed;
+    return PARAMS[key] ? PARAMS[key].value : '';
+  }
 
-    Array.prototype.forEach.call(document.querySelectorAll('.gear-style-btn'), function (btn) {
-      btn.addEventListener('click', function () {
-        Array.prototype.forEach.call(document.querySelectorAll('.gear-style-btn'), function (b) {
-          b.className = 'gear-style-btn bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 px-2 rounded text-center';
-        });
-        btn.className = 'gear-style-btn bg-orange-600 text-white font-medium py-1.5 px-2 rounded text-center';
-        state.gearStyle = btn.dataset.style;
-        updateClusterUI();
-      });
-    });
+  // ------------------------------------------------------------ rendering --
+  function clear(ctx, w, h) { ctx.clearRect(0, 0, w * PX, h * PX); }
 
-    document.getElementById('selectUpperScreen').addEventListener('change', function (e) {
-      state.upperScreen = parseInt(e.target.value, 10);
-      updateClusterUI();
-    });
+  // Значение крупным шрифтом + единица мелким, по нижней линии.
+  function valueUnitW(v, unit, F) {
+    return textW(v, F.med) + (unit ? 2 + textW(unit, F.small) : 0);
+  }
+  function drawValueUnit(ctx, v, unit, x, y, F) {
+    var end = drawText(ctx, v, x, y, F.med);
+    if (unit) drawText(ctx, unit, end + 3, y + fontH(F.med) - 7, F.small);
+  }
 
-    document.getElementById('selectLowerMid').addEventListener('change', function (e) {
-      state.lowerMid = e.target.value;
-      updateClusterUI();
-    });
-
-    document.getElementById('btnDemoSweep').addEventListener('click', function () {
-      state.demoRunning = !state.demoRunning;
-      var btn = document.getElementById('btnDemoSweep');
-      var text = document.getElementById('btnDemoText');
-      if (state.demoRunning) {
-        text.textContent = 'Стоп';
-        btn.classList.replace('bg-orange-600', 'bg-red-600');
-        state.mode = 'M';
-        state.gearNum = 2;
-        state.rpm = 2500;
-        state.demoInterval = setInterval(function () {
-          state.rpm += 60;
-          if (state.rpm >= 5600) {
-            state.rpm = 3800;
-            state.gearNum = (state.gearNum < 4) ? state.gearNum + 1 : 2;
-          }
-          document.getElementById('rpmSlider').value = state.rpm;
-          updateClusterUI();
-        }, 40);
+  function drawUpper() {
+    var W = P.upperW, H = P.upperH, F = FONTS[state.panel], low = state.panel === 'LOW';
+    clear(upperCtx, W, H);
+    var key = state.upper, v = valueOf(key, state.upperVal);
+    if (key === 'clock') {
+      var out = PARAMS.outside;
+      if (low) {
+        drawText(upperCtx, v, Math.round((W - textW(v, F.med)) / 2), 0, F.med);
+        var s = out.value + out.unit;
+        drawText(upperCtx, s, Math.round((W - textW(s, F.small)) / 2), 11, F.small);
       } else {
-        text.textContent = 'Авто-Разгон';
-        btn.classList.replace('bg-red-600', 'bg-orange-600');
-        clearInterval(state.demoInterval);
+        drawText(upperCtx, v, Math.round((W - textW(v, F.med)) / 2), 1, F.med);
+        var ow = valueUnitW(out.value, out.unit, F);
+        drawValueUnit(upperCtx, out.value, out.unit, Math.round((W - ow) / 2), 15, F);
       }
-    });
+      return;
+    }
+    if (key === 'speed') {
+      var bw = textW(v, F.big) + 3 + textW('km/h', F.small);
+      var bx = Math.round((W - bw) / 2), by = Math.round((H - F.big.h) / 2);
+      var e = drawText(upperCtx, v, bx, by, F.big);
+      drawText(upperCtx, 'km/h', e + 3, by + F.big.h - 7, F.small);
+      return;
+    }
+    var p = PARAMS[key];
+    var vw = valueUnitW(v, p.unit, F);
+    if (p.icon && !low) {
+      var ih = iconH(p.icon);
+      drawIcon(upperCtx, p.icon, Math.round((W - iconW(p.icon)) / 2), Math.max(0, 13 - ih));
+      drawValueUnit(upperCtx, v, p.unit, Math.round((W - vw) / 2), 15, F);
+    } else if (p.icon && low) {
+      var total = iconW(p.icon) + 4 + vw, x0 = Math.round((W - total) / 2);
+      drawIcon(upperCtx, p.icon, x0, Math.round((H - iconH(p.icon)) / 2));
+      drawValueUnit(upperCtx, v, p.unit, x0 + iconW(p.icon) + 4, Math.round((H - F.med.h) / 2), F);
+    } else {
+      drawValueUnit(upperCtx, v, p.unit, Math.round((W - vw) / 2), Math.round((H - F.med.h) / 2), F);
+    }
+  }
 
-    updateClusterUI();
-  })();
-  </script>
+  function strokeRect(ctx, x0, y0, x1, y1) {
+    for (var x = x0; x <= x1; x++) { px(ctx, x, y0, ON); px(ctx, x, y1, ON); }
+    for (var y = y0; y <= y1; y++) { px(ctx, x0, y, ON); px(ctx, x1, y, ON); }
+  }
+
+  function drawLower() {
+    var W = P.lowerW, H = P.lowerH, F = FONTS[state.panel], low = state.panel === 'LOW';
+    clear(lowerCtx, W, H);
+    var mode = state.mode, n = String(state.gearNum), label = mode;
+    var top = low ? 1 : 2, gearH = F.big.h;
+
+    if (state.style === 'A') {
+      label = mode === 'M' ? 'M' + n : mode;
+      var gw = textW(label, F.boxed), pad = low ? 2 : 3;
+      var bw = gw + pad * 2 + 2, bh = F.boxed.h + pad * 2 + 2;
+      var bx = Math.round((W - bw) / 2), by = top + Math.round((gearH - bh) / 2);
+      strokeRect(lowerCtx, bx, by, bx + bw - 1, by + bh - 1);
+      drawText(lowerCtx, label, bx + pad + 1, by + pad + 1, F.boxed);
+    } else if (state.style === 'B') {
+      if (mode === 'D') label = 'D' + n; else if (mode === 'M') label = 'S' + n;
+      drawText(lowerCtx, label, Math.round((W - textW(label, F.big)) / 2), top, F.big);
+    } else {
+      if (mode === 'M') {
+        label = n;
+        drawText(lowerCtx, n, Math.round((W - textW(n, F.big)) / 2), top, F.big);
+      } else if (mode === 'D') {
+        label = 'D' + n;
+        var dw = textW('D', F.big), sw = textW(n, F.sub), x0 = Math.round((W - dw - 2 - sw) / 2);
+        drawText(lowerCtx, 'D', x0, top, F.big);
+        drawText(lowerCtx, n, x0 + dw + 2, top + gearH - F.sub.h, F.sub);
+      } else {
+        drawText(lowerCtx, mode, Math.round((W - textW(mode, F.big)) / 2), top, F.big);
+      }
+    }
+    document.getElementById('statGear').textContent = label;
+    if (state.warn) {
+      drawIcon(lowerCtx, 'warn', W - iconW('warn') - (low ? 2 : 6), top + Math.round((gearH - iconH('warn')) / 2));
+    }
+
+    // Строка параметра: значок слева, значение справа (как на фото щитка).
+    var key = state.lower;
+    var midTop = top + gearH + (low ? 2 : 3), midH = low ? 13 : 13;
+    if (key !== 'none') {
+      var p = PARAMS[key], v = valueOf(key, state.lowerVal);
+      var vw = valueUnitW(v, p.unit, F);
+      drawValueUnit(lowerCtx, v, p.unit, W - 3 - vw, midTop + Math.round((midH - F.med.h) / 2), F);
+      if (p.icon) drawIcon(lowerCtx, p.icon, 3, midTop + Math.round((midH - iconH(p.icon)) / 2));
+    }
+
+    // Линия «_km____» и пробег/суточный — от нижнего края.
+    var odoF = low ? F.small : F.med;
+    var odoY = H - fontH(odoF) - 1;
+    var lineY = odoY - 2;
+    if (low) {
+      for (var x = 0; x < W; x++) px(lowerCtx, x, lineY, ON);
+    } else {
+      var kmX = 4, kmEnd = drawText(lowerCtx, 'km', kmX, lineY - 7, F.small);
+      for (var x2 = 0; x2 < W; x2++) {
+        if (x2 >= kmX - 1 && x2 <= kmEnd + 1) continue;
+        px(lowerCtx, x2, lineY, ON);
+      }
+    }
+    drawText(lowerCtx, state.odo, 2, odoY, odoF);
+    drawText(lowerCtx, state.trip, W - 2 - textW(state.trip, odoF), odoY, odoF);
+  }
+
+  function fillTrapezoid(ctx, topY, botY, topHalf, botHalf, cx, color) {
+    ctx.fillStyle = color;
+    for (var y = Math.round(topY); y < Math.round(botY); y++) {
+      var k = (y - topY) / (botY - topY);
+      var half = Math.round(topHalf + (botHalf - topHalf) * k);
+      ctx.fillRect(Math.round(cx - half) * PX, y * PX, half * 2 * PX, PX);
+    }
+  }
+
+  // ACC-узел — не точечная матрица, а лампы за подложкой с рисунком:
+  // машина и 4 раздельные трапеции дороги (подтверждено владельцем).
+  function drawAcc(lit) {
+    var W = P.accW, H = P.accH, cx = W / 2, s = H / 46;
+    clear(accCtx, W, H);
+    drawIcon(accCtx, 'car', Math.round(cx - iconW('car') / 2), Math.round(2 * s), lit > 0 ? ON : DIM);
+    var bars = 4, topY = 12 * s, botY = H - 2 * s, gap = 3 * s;
+    var rowH = (botY - topY - gap * (bars - 1)) / bars;
+    for (var i = 0; i < bars; i++) {
+      var rt = topY + i * (rowH + gap);
+      fillTrapezoid(accCtx, rt, rt + rowH, (4 + i * 7) * s, (4 + (i + 1) * 7) * s, cx, i < lit ? ON : DIM);
+    }
+  }
+
+  function render() {
+    document.getElementById('rpmValue').textContent = state.rpm + ' RPM';
+    document.getElementById('statRpm').textContent = state.rpm;
+    var manual = state.mode === 'M', lit = 0, strobe = false, txt;
+    if (manual && state.rpm >= 5200) { lit = 4; strobe = true; txt = t('strobe'); }
+    else if (manual && state.rpm >= 5000) { lit = 3; txt = t('bars')(3); }
+    else if (manual && state.rpm >= 4500) { lit = 2; txt = t('bars')(2); }
+    else if (manual && state.rpm >= 4000) { lit = 1; txt = t('bars')(1); }
+    else txt = manual ? t('ready') : t('needM');
+    document.getElementById('statShift').textContent = txt;
+    if (state.panel !== 'LOW') drawAcc(strobe ? (Math.floor(Date.now() / 100) % 2 ? 4 : 0) : lit);
+    drawUpper();
+    drawLower();
+  }
+
+  // ------------------------------------------------------------- controls --
+  function avail(key) {
+    if (key === 'clock' || key === 'speed') return { cls: 'own', text: T[lang].a.own };
+    if (key === 'none') return { cls: '', text: '' };
+    var p = PARAMS[key], a = T[lang].a;
+    if (p.av === 'ram') return { cls: 'ram', text: a.ram.replace('%s', p.ref) };
+    if (p.av === 'bus') return { cls: 'bus', text: a.bus.replace('%s', p.ref) };
+    if (p.av === 'own') return { cls: 'ram', text: a.own };
+    return { cls: 'none', text: a.none };
+  }
+  function fillSelect(id, opts, cur) {
+    var sel = document.getElementById(id);
+    sel.innerHTML = '';
+    opts.forEach(function (k) {
+      var o = document.createElement('option');
+      o.value = k; o.textContent = T[lang].p[k]; if (k === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  function syncSide(which) {
+    var key = state[which], a = avail(key);
+    var el = document.getElementById(which === 'upper' ? 'availUpper' : 'availLower');
+    el.className = 'avail ' + a.cls; el.textContent = a.text;
+    var inp = document.getElementById(which === 'upper' ? 'valUpper' : 'valLower');
+    inp.value = key === 'none' ? '' : valueOf(key, null);
+    inp.disabled = key === 'none';
+  }
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-t]'), function (el) {
+      var v = T[lang][el.dataset.t];
+      if (/^note/.test(el.dataset.t)) el.innerHTML = v; else el.textContent = v;
+    });
+    if (state.demo) document.getElementById('btnDemo').textContent = t('stop');
+    fillSelect('selUpper', UPPER_OPTS, state.upper);
+    fillSelect('selLower', LOWER_OPTS, state.lower);
+    syncSide('upper'); syncSide('lower');
+    var p = PROFILES[state.panel];
+    document.getElementById('resNote').textContent =
+      state.panel + ': ' + p.upperW + '×' + p.upperH + ' / ' + p.lowerW + '×' + p.lowerH + ' (PX=' + p.px + ')';
+    render();
+  }
+
+  function segment(id, attr, onPick) {
+    var root = document.getElementById(id);
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b || !root.contains(b)) return;
+      Array.prototype.forEach.call(root.querySelectorAll('button'), function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      onPick(b.dataset[attr]);
+    });
+  }
+
+  segment('modeSeg', 'mode', function (v) { state.mode = v; render(); });
+  segment('numSeg', 'num', function (v) { state.gearNum = parseInt(v, 10); render(); });
+  segment('styleSeg', 'style', function (v) { state.style = v; render(); });
+  segment('panelSeg', 'type', function (v) { state.panel = v; applyProfile(v); applyLang(); });
+
+  document.getElementById('chkWarn').addEventListener('change', function (e) { state.warn = e.target.checked; render(); });
+  document.getElementById('rpmSlider').addEventListener('input', function (e) {
+    state.rpm = parseInt(e.target.value, 10); render();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.rpm-preset'), function (b) {
+    b.addEventListener('click', function () {
+      state.rpm = parseInt(b.dataset.rpm, 10);
+      document.getElementById('rpmSlider').value = state.rpm;
+      render();
+    });
+  });
+  document.getElementById('selUpper').addEventListener('change', function (e) {
+    state.upper = e.target.value; state.upperVal = null; syncSide('upper'); render();
+  });
+  document.getElementById('selLower').addEventListener('change', function (e) {
+    state.lower = e.target.value; state.lowerVal = null; syncSide('lower'); render();
+  });
+  document.getElementById('valUpper').addEventListener('input', function (e) { state.upperVal = e.target.value; render(); });
+  document.getElementById('valLower').addEventListener('input', function (e) { state.lowerVal = e.target.value; render(); });
+
+  document.getElementById('btnDemo').addEventListener('click', function () {
+    var btn = document.getElementById('btnDemo');
+    if (state.demo) {
+      clearInterval(state.demo); state.demo = null;
+      btn.textContent = t('demo'); btn.classList.remove('on');
+      return;
+    }
+    btn.textContent = t('stop'); btn.classList.add('on');
+    state.mode = 'M'; state.gearNum = 2; state.rpm = 2500;
+    state.demo = setInterval(function () {
+      state.rpm += 60;
+      if (state.rpm >= 5600) { state.rpm = 3800; state.gearNum = state.gearNum < 4 ? state.gearNum + 1 : 2; }
+      document.getElementById('rpmSlider').value = state.rpm;
+      render();
+    }, 40);
+  });
+
+  setInterval(function () { if (state.mode === 'M' && state.rpm >= 5200) render(); }, 100);
+
+  window.addEventListener('storage', function (e) {
+    if (e.key === LANG_KEY && (e.newValue === 'ru' || e.newValue === 'en') && e.newValue !== lang) {
+      lang = e.newValue; applyLang();
+    }
+  });
+
+  applyProfile(state.panel);
+  applyLang();
+})();
+</script>
 </body>
 </html>

@@ -1,5 +1,15 @@
 # Dash-BMW-e90
 
+> **🌐 [rzhavoezubilo.github.io/Dash-BMW-e90](https://rzhavoezubilo.github.io/Dash-BMW-e90/)** —
+> самое интересное из проекта в одном месте: интерактивный эмулятор экрана
+> приборки, справочник джобов и адресов прошивки, схема UART-подключения
+> к процессору для снятия дампа.
+>
+> **🌐 [rzhavoezubilo.github.io/Dash-BMW-e90](https://rzhavoezubilo.github.io/Dash-BMW-e90/)** —
+> the highlights of the project in one place: an interactive emulator of the
+> cluster display, a reference of diagnostic jobs and firmware addresses, and
+> the UART wiring guide for dumping the MCU flash. *(Site available in English.)*
+
 Проекты вокруг приборной панели BMW E90 и вывода на неё произвольных
 параметров.
 

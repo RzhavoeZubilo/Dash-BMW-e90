@@ -25,6 +25,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "docs" / "research" / "KOMB87_JOBS.md"
 SRC_RU = REPO / "docs" / "research" / "KOMB87_JOBS_RU.md"
+SRC_EN = REPO / "docs" / "research" / "KOMB87_JOBS_EN.md"
 OUT = REPO / "site" / "reference" / "jobs-data.js"
 
 LINE_RE = re.compile(
@@ -48,7 +49,8 @@ def parse_ru(text: str) -> dict[str, str]:
     return ru_by_name
 
 
-def parse_jobs(text: str, ru_by_name: dict[str, str]) -> list[dict]:
+def parse_jobs(text: str, ru_by_name: dict[str, str], en_by_name: dict[str, str] | None = None) -> list[dict]:
+    en_by_name = en_by_name or {}
     jobs = []
     for line in text.splitlines():
         s = line.strip()
@@ -68,6 +70,7 @@ def parse_jobs(text: str, ru_by_name: dict[str, str]) -> list[dict]:
                 "addr": m.group("addr").upper().replace("0X", "0x"),
                 "comment": clean_comment,
                 "ru": ru_by_name.get(name, ""),
+                "en": en_by_name.get(name, ""),
                 "tags": tags,
             }
         )
@@ -89,7 +92,8 @@ def main() -> int:
         return 1
 
     ru_by_name = parse_ru(SRC_RU.read_text(encoding="utf-8"))
-    jobs = parse_jobs(SRC.read_text(encoding="utf-8"), ru_by_name)
+    en_by_name = parse_ru(SRC_EN.read_text(encoding="utf-8")) if SRC_EN.exists() else {}
+    jobs = parse_jobs(SRC.read_text(encoding="utf-8"), ru_by_name, en_by_name)
     if not jobs:
         print("не нашлось ни одного джоба — формат источника изменился?", file=sys.stderr)
         return 1

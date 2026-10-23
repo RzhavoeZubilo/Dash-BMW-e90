@@ -1,0 +1,144 @@
+# komb87.prg — English notes on the jobs
+
+The source of truth for the **meaning** of each job is `KOMB87_JOBS.md` (BMW's
+original German comment from the SGBD itself). This file is a separate,
+human-written English explanation for the website (the "Notes" column of the
+reference in English mode). It mirrors `KOMB87_JOBS_RU.md` line by line.
+
+Format: `- \`JOB_NAME\` -- English text`, one job per line; order does not
+matter (joined by name in `tools/site/build_jobs_data.py`). A job missing here
+falls back to the Russian note on the site.
+
+- `INFO` -- service information about the SGBD itself (version, description) — about the diagnostic file, not the cluster
+- `INITIALISIERUNG` -- opens a diagnostic session and sets communication parameters (speed, protocol) before any other job
+- `DIAGNOSEPROTOKOLL_LESEN` -- find out which diagnostic protocols (KWP2000 etc.) the cluster supports
+- `DIAGNOSEPROTOKOLL_SETZEN` -- select the diagnostic protocol for the current session
+- `IDENT` -- read the cluster identification (part number, software version etc.) — the same data INPA/ISTA show under "identification"
+- `FS_LESEN` -- read the whole fault memory: every fault code with its status (location and type)
+- `FS_LESEN_DETAIL` -- read the details of one specific fault (all fields for a single code)
+- `FS_LOESCHEN` -- clear the fault memory (the "clear faults" button in diagnostics)
+- `PRUEFSTEMPEL_LESEN` -- read the "test stamp" — the mark that a factory/service test was passed
+- `PRUEFSTEMPEL_SCHREIBEN` -- write the "test stamp" (used at the factory/workshop after a test)
+- `NORMALER_DATENVERKEHR` -- enable or disable normal bus traffic (e.g. silence the cluster during diagnostics)
+- `DIAGNOSE_AUFRECHT` -- keep-alive: keeps the diagnostic session open (the cluster drops out of diagnostics if not pinged)
+- `DIAGNOSE_ENDE` -- end the diagnostic session cleanly
+- `DIAGNOSE_MODE` -- switch the cluster into a specific diagnostic mode (extended access etc.)
+- `SLEEP_MODE` -- put the cluster to sleep (power saving)
+- `ENERGIESPARMODE` -- configure the cluster's energy-saving mode
+- `SPEICHER_LESEN` -- generic memory read by segment + address (ROM/RAM/flash/EEPROM directly, bypassing coding) — the diagnostic-path counterpart of the UART dump
+- `SPEICHER_SCHREIBEN` -- generic memory write by segment + address, the low-level counterpart of `SPEICHER_LESEN`
+- `CBS_INFO` -- version of the CBS subsystem (Condition Based Service — condition-based service intervals)
+- `CBS_DATEN_LESEN` -- read CBS data (what is left until the next service, oil change etc.), format version 4
+- `CBS_RESET` -- reset CBS data (as if a service was performed)
+- `PRUEFCODE_LESEN` -- read the standard check code for the service advisor (authenticity/state check)
+- `C_CI_LESEN` -- read the coding index (the FSW/PSW parameter set version the cluster is coded with)
+- `C_FG_LESEN` -- read the VIN stored in the cluster
+- `C_FG_SCHREIBEN` -- write the VIN into the cluster (binds it to a specific car)
+- `C_FG_AUFTRAG` -- write the VIN and read it back to verify
+- `C_AEI_LESEN` -- read the coding change index (coding version counter)
+- `C_AEI_SCHREIBEN` -- write the coding change index
+- `C_AEI_AUFTRAG` -- write the coding change index and read it back to verify
+- `C_C_LESEN` -- read a coding data block (equipment parameters FSW/PSW)
+- `C_C_SCHREIBEN` -- **the main coding job** — what NCS Expert/ISTA use to write coding (FSW/PSW) via `$22`/`$2E`, range `$3000-$3EFF`
+- `C_C_AUFTRAG` -- write a coding data block and read it back to verify
+- `SERIENNUMMER_LESEN` -- read the manufacturer serial number (of the cluster unit itself, not the VIN)
+- `ZIF_LESEN` -- read the "supplier information field" (manufacturer service data, Siemens VDO/Johnson Controls)
+- `ZIF_BACKUP_LESEN` -- read the backup copy of the ZIF field (in case the main one is damaged)
+- `PHYSIKALISCHE_HW_NR_LESEN` -- read the physical hardware number (HW-NR) — what WinKFP checks before flashing, see the software-to-hardware binding section in the research
+- `HARDWARE_REFERENZ_LESEN` -- read the hardware platform reference of the cluster
+- `DATEN_REFERENZ_LESEN` -- read the data set reference (version of the flashed data/tables)
+- `FLASH_ZEITEN_LESEN` -- read flashing timings: how long erasing and signature checking take (so the tester does not drop the session too early)
+- `FLASH_BLOCKLAENGE_LESEN` -- read the maximum data block size per transfer when flashing
+- `AUTHENTISIERUNG_ZUFALLSZAHL_LESEN` -- first step of the challenge-response authentication before flashing: get a random number (challenge) from the cluster
+- `AUTHENTISIERUNG_START` -- second step: send the answer (signed random number) and get permission to flash
+- `FLASH_PROGRAMMIER_STATUS_LESEN` -- current state of the flashing process (running/finished/error)
+- `FLASH_SIGNATUR_PRUEFEN` -- verify the cryptographic signature of the firmware (final step after writing; without it the new firmware is not accepted)
+- `STEUERGERAETE_RESET` -- reboot the module (software reset of the cluster)
+- `FLASH_LOESCHEN` -- erase a flash area before writing new firmware
+- `FLASH_SCHREIBEN_ADRESSE` -- flashing preparation: tell the cluster the address and size of the block about to be sent
+- `FLASH_SCHREIBEN` -- transfer and write the next firmware data block to flash
+- `FLASH_SCHREIBEN_ENDE` -- finish the flashing process (final step after all blocks are sent)
+- `AIF_LESEN` -- read the "user information field" (a service area for notes/labels, does not affect operation)
+- `AIF_SCHREIBEN` -- write the "user information field"
+- `SG_RESET_OHNE_UHR_DATUM` -- reboot the module without resetting the clock and date (unlike a normal reset)
+- `UHRZEIT_DATUM_STELLEN` -- set the time and date in the cluster
+- `CODIERDATEN_LESEN` -- read a coding block directly by block number (range `0x3000-0x3FFF`), lower level than `C_C_LESEN`
+- `C_CHECKSUMME` -- compute the checksum of a coding block before writing (not a crypto signature, just a checksum against corrupted data)
+- `STEUERN_LEUCHTEN` -- force the warning lamps on (lamp check by a technician)
+- `STEUERN_LEUCHTEN_BLAU` -- turn on only the blue lamps (colour test)
+- `STEUERN_LEUCHTEN_GELB` -- turn on only the yellow lamps (colour test)
+- `STEUERN_LEUCHTEN_GRUEN` -- turn on only the green lamps (colour test)
+- `STEUERN_LEUCHTEN_ORANGE` -- turn on only the orange/amber lamps (colour test)
+- `STEUERN_LEUCHTEN_ROT` -- turn on only the red lamps (colour test)
+- `STEUERN_LEUCHTEN_AUS` -- stop the forced lamp control started by `STEUERN_LEUCHTEN`, back to normal
+- `STEUERN_BLINKER` -- force the turn indicators on (service test)
+- `STEUERN_BLINKER_AUS` -- stop the forced indicator control started by `STEUERN_BLINKER`
+- `STEUERN_SELBSTTEST_EIN` -- start the cluster self-test (needles/display/lamps check as at power-up)
+- `STEUERN_SELBSTTEST_AUS` -- stop the self-test
+- `STEUERN_TACHO` -- set an arbitrary speedometer reading (0..300 km/h) — temporary, only for the session, to check the needle/display
+- `STEUERN_TACHO_AUS` -- stop forcing the speed, back to real readings
+- `STEUERN_DREHZAHL` -- set an arbitrary tachometer reading (rpm) — temporary, for the session
+- `STEUERN_DREHZAHL_AUS` -- stop forcing the rpm, back to real readings
+- `STEUERN_KVA` -- set an arbitrary instant fuel consumption (l/100 km) — temporary, for the session
+- `STEUERN_KVA_AUS` -- stop forcing consumption, back to real readings
+- `STEUERN_TANK` -- set an arbitrary fuel level (%) — to check the needle/indicator
+- `STEUERN_TANK_AUS` -- stop forcing the fuel level, back to real readings
+- `STEUERN_ACC_ZEIGER` -- set an arbitrary speed for the ACC (cruise control) needle/indicator — temporary, for the session
+- `STEUERN_ACC_ZEIGER_AUS` -- stop forcing the ACC indicator
+- `STEUERN_VWF` -- set an arbitrary rpm for the tachometer pre-warning field (the zone before the red line) — temporary, for the session
+- `STEUERN_VWF_AUS` -- stop forcing the pre-warning field rpm
+- `STATUS_TANKINHALT` -- read the raw fuel level of both float sensors (1 and 2) in litres
+- `STATUS_A_TEMP_LESEN` -- read the outside air temperature: both the displayed and the raw sensor value
+- `GWSZ_RESET` -- change the odometer correction offset (GWSZ — "corrected total mileage")
+- `STATUS_ABSOLUTER_GWSZ` -- read the absolute (unshifted) mileage
+- `STATUS_GWSZ_OFFSET` -- read the current mileage offset (difference between absolute and displayed)
+- `STATUS_GWSZ_ANZEIGE` -- read the mileage actually shown on the odometer (offset applied)
+- `LESEN_AKTUELLES_UIF` -- read the cluster's current "user information field" (UIF)
+- `LESEN_HW_NUMMER` -- read the cluster hardware version number (HW-Nummer)
+- `LESEN_EEPROM_DATENINDEX` -- read the index (version) of the data set in EEPROM
+- `LESEN_VARIANTENINDEX` -- read the variant index (the specific cluster version/equipment)
+- `LESEN_HW_AENDERUNGSINDEX` -- read the hardware change index (board/hardware revision)
+- `LESEN_DIAGNOSEINDEX` -- read the diagnostic software version index
+- `LESEN_FERTIGUNGSDATUM` -- read the cluster's manufacturing date
+- `LESEN_LIEFEREANTENNUMMER` -- read the supplier number (cluster manufacturer — Siemens VDO/Johnson Controls etc.)
+- `LESEN_SW_LAYER_VERSION` -- read the versions of the software "layers" (internal firmware modules)
+- `STATUS_TACHO_LESEN` -- read the currently displayed speed (km/h) — a plain read, unlike `STEUERN_TACHO`, which sets it
+- `STATUS_DREHZAHL_LESEN` -- read the current engine speed (rpm)
+- `STATUS_LENKSTOCK` -- read the steering column stalk state (which buttons/positions are active)
+- `STATUS_KL30_H_OFFSET` -- read the offset of the terminal-30 (permanent power) operating hours counter
+- `STATUS_KL30_H_ZAEHLER` -- read the terminal-30 operating hours counter itself
+- `CALC_KL30_H_OFFSET` -- compute the terminal-30 hours offset from the current date
+- `SET_KL30_OFFSET2AKT_DATE` -- apply the computed terminal-30 hours offset to the current date
+- `STATUS_DATE_LAST_CODING_SESSION` -- read the date the cluster was last coded at the factory/BMW (read-only)
+- `STATUS_KLEMMEN` -- read the ignition terminal states (30/15/X etc. — what is powered right now)
+- `C_FG_LESEN2` -- alternative/backup VIN read job (duplicates `C_FG_LESEN`)
+- `STATUS_KLEMMENSPANNUNG` -- read the cluster supply voltage (vehicle electrical system)
+- `STATUS_CHECKCONTROL_LESEN` -- read the IDs of the Check Control messages active right now
+- `STATUS_BETRIEBSDATEN_HEADER` -- read the mileage from the CBS operating data header
+- `STATUS_BETRIEBSDATEN_LESEN` -- read selected CBS operating data (service interval details)
+- `STATUS_ZEITSTRAHL` -- output CBS data "on a timeline" for the service advisor's calculator (what needs service when)
+- `STEUERN_CBS_KM_PER_YEAR` -- set the average annual mileage used for CBS calculations
+- `STEUERN_CBS_SC_CODIERUNG` -- enable/disable service-call coding for CBS (coding-like, but a separate mechanism)
+- `STATUS_CBS_WOCHEN_KM` -- read the "km per week" algorithm data from the CBS operating data header
+- `MOTORTYP` -- determine the engine type coded into the cluster (from coding data)
+- `STEUERN_TESTBITMAP` -- show a test image (bitmap) on the cluster display — handy for checking every pixel/segment at once
+- `STEUERN_TESTBITMAP_AUS` -- remove the test image, back to the normal screen
+- `STATUS_CHECKCONTROL_HISTORY` -- read the history (archive) of Check Control messages from cluster memory
+- `ZEIGERZAHL` -- determine from coding data how many real needles the cluster has (different versions have different gauges)
+- `STATUS_BOS_CODIERUNG` -- read the CBS coding for each individual service item (oil, brakes etc.)
+- `STEUERN_BOS_CODIERUNG` -- write the CBS coding for each individual service item
+- `STATUS_GLOBAL_KM` -- read the mileage from three sources at once — cluster RAM, EEPROM and the CAS module — for cross-checking
+- `STATUS_KI` -- read an arbitrary cluster data block (service job, the block is passed as a parameter)
+- `RINGBUF_INIT` -- initialise the ring buffer (reset the service record queue before use)
+- `LESEN_RINGBUF` -- read the ring buffer contents
+- `STATUS_NTC1` -- read the raw ADC value of channel 3 (thermistor NTC1 — one of the cluster's temperature sensors)
+- `LESEN_CODIERBLOCK` -- low-level coding block read straight from EEPROM (even lower level than `CODIERDATEN_LESEN`)
+- `RESTORE_PIA_DEFAULT` -- reset the PIA keys (protected access/authentication) to factory defaults
+- `LESEN_PIA_WERTE` -- read the current PIA key values
+- `STEUERN_CCG` -- force the Check Control chime (gong) — service sound check
+- `STEUERGERAETE_RESET_DELAY` -- reboot the module with a delay (not instantly like `STEUERGERAETE_RESET`)
+- `STEUERN_ATEMP_RESET` -- reset the outside temperature algorithm (copy the raw value straight to the displayed one, no smoothing)
+- `LESEN_HW_AENDERUNGSINDEX_PRODUKTIONSORT` -- read the hardware change index including the production site (alternative to `LESEN_HW_AENDERUNGSINDEX`)
+- `STATUS_CBS_ANZEIGE` -- read what is currently shown on the display for CBS service intervals
+- `STEUERN_ANPASSEN_ACC_KENNLINIE_SVDO` -- calibrate the characteristic curve of the ACC needle/indicator — writes NVRAM directly, no crypto signature
+- `STEUERN_ANPASSEN_LCD_KENNLINIE_SVDO` -- calibrate the characteristic curve of the LCD indicator — writes NVRAM directly, no crypto signature

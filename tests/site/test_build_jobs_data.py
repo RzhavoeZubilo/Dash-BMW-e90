@@ -22,6 +22,7 @@ def test_parses_standard_line():
             "addr": "0x0001B274",
             "comment": "Auslesen des Steuergeraete-Speichers",
             "ru": "прочитать память",
+            "en": "",
             "tags": [],
         }
     ]
@@ -107,11 +108,25 @@ def test_real_source_ru_file_covers_all_jobs():
     assert missing == [], f"нет русского пояснения для: {missing}"
 
 
+def test_real_source_en_file_covers_all_jobs():
+    en_by_name = build_jobs_data.parse_ru(
+        build_jobs_data.SRC_EN.read_text(encoding="utf-8")
+    )
+    jobs = build_jobs_data.parse_jobs(
+        build_jobs_data.SRC.read_text(encoding="utf-8"), {}, en_by_name
+    )
+    missing = [j["name"] for j in jobs if not j["en"]]
+    assert missing == [], f"нет английского пояснения для: {missing}"
+
+
 def test_real_repo_jobs_data_js_is_in_sync():
     # Регрессия: напоминает запустить `python3 tools/site/build_jobs_data.py`
     # после правок в docs/research/KOMB87_JOBS.md или KOMB87_JOBS_RU.md.
     ru_by_name = build_jobs_data.parse_ru(build_jobs_data.SRC_RU.read_text(encoding="utf-8"))
-    jobs = build_jobs_data.parse_jobs(build_jobs_data.SRC.read_text(encoding="utf-8"), ru_by_name)
+    en_by_name = build_jobs_data.parse_ru(build_jobs_data.SRC_EN.read_text(encoding="utf-8"))
+    jobs = build_jobs_data.parse_jobs(
+        build_jobs_data.SRC.read_text(encoding="utf-8"), ru_by_name, en_by_name
+    )
     expected = (
         "// Сгенерировано: python3 tools/site/build_jobs_data.py\n"
         "// Источник: docs/research/KOMB87_JOBS.md -- не редактировать руками.\n"
@@ -126,9 +141,12 @@ def test_output_is_valid_json_embedded_in_js(tmp_path, monkeypatch):
     src.write_text("- `X` @ 0x00000010 -- test job\n", encoding="utf-8")
     src_ru = tmp_path / "jobs_ru.md"
     src_ru.write_text("- `X` -- тестовый джоб\n", encoding="utf-8")
+    src_en = tmp_path / "jobs_en.md"
+    src_en.write_text("- `X` -- test job note\n", encoding="utf-8")
     out = tmp_path / "jobs-data.js"
     monkeypatch.setattr(build_jobs_data, "SRC", src)
     monkeypatch.setattr(build_jobs_data, "SRC_RU", src_ru)
+    monkeypatch.setattr(build_jobs_data, "SRC_EN", src_en)
     monkeypatch.setattr(build_jobs_data, "OUT", out)
     monkeypatch.setattr(sys, "argv", ["build_jobs_data.py"])
 
@@ -144,6 +162,7 @@ def test_output_is_valid_json_embedded_in_js(tmp_path, monkeypatch):
             "addr": "0x00000010",
             "comment": "test job",
             "ru": "тестовый джоб",
+            "en": "test job note",
             "tags": [],
         }
     ]
