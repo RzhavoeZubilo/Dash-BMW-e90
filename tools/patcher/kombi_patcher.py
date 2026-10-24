@@ -17,7 +17,11 @@ BMW E90 Kombi firmware patcher (Fujitsu MB90F395HA, F2MC-16LX).
 байт не совпал (другой образ, уже пропатченный образ) -- ничего не пишется
 и выходной файл не создаётся.
 
-Вход: Intel HEX (.0pa) или сырой 512 КБ дамп (.bin, база 0xF80000).
+Вход для записи результата -- только настоящий полный дамп приборки (.bin,
+512 КБ, база 0xF80000), снятый по UART. Из .0pa файл не создаётся: в .0pa нет
+загрузчика (0xFFBFF0-0xFFFFFF) и участка 0xFB9FF0-0xFBBFFF, который на живом
+дампе E71 (той же платформы) занят кодом загрузчика; образ из .0pa, залитый
+целиком, стёр бы загрузчик. .0pa годится только для проверки патча (тесты).
 """
 
 import sys
@@ -181,9 +185,23 @@ def apply_all(mem, patches=PATCHES):
             print(f"    0x{addr:06X}: {len(new)} байт")
 
 
+LOADER_START, FLASH_END = 0xFFBFF0, 0x1000000
+
+
+def full_dump_problem(mem):
+    """Пояснение, почему вход нельзя превращать в образ для заливки, или None."""
+    if not mem.is_bin:
+        return "Вход -- .0pa, а не дамп: в нём нет загрузчика."
+    if len(mem.memory) != 512 * 1024:
+        return f"Дамп должен быть ровно 512 КБ, а в нём {len(mem.memory)} байт."
+    if all(mem.memory[a] == 0xFF for a in range(LOADER_START, FLASH_END)):
+        return "Область загрузчика 0xFFBFF0-0xFFFFFF пустая -- это не полный дамп."
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="BMW E90 Kombi firmware patcher (только проверенные патчи)")
-    parser.add_argument("-i", "--input", default="local-firmware/9213308A.0pa", help="Входной файл стоковой прошивки (.0pa или .bin)")
+    parser.add_argument("-i", "--input", required=True, help="полный дамп приборки по UART (.bin, 512 КБ)")
     parser.add_argument("-o", "--output-bin", default="kombi_custom_firmware.bin", help="Имя выходного бинарного файла для UART прошивки")
 
     args = parser.parse_args()
@@ -193,6 +211,10 @@ def main():
         sys.exit(1)
 
     mem_image = MemoryImage(args.input)
+    problem = full_dump_problem(mem_image)
+    if problem:
+        print(f"[-] {problem} Выходной файл не создан.")
+        sys.exit(1)
     try:
         apply_all(mem_image)
     except PatchError as e:

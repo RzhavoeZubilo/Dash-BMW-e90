@@ -132,3 +132,18 @@ def test_refuses_other_real_images(name):
     mem = _local(name)
     with pytest.raises(kp.PatchError):
         kp.apply_all(mem)
+
+
+def test_refuses_to_build_image_from_0pa_or_blank_loader(tmp_path):
+    hexfile = tmp_path / "x.0pa"
+    hexfile.write_text(":02000004 00F8 02\n".replace(" ", "") + ":00000001FF\n")
+    assert "0pa" in kp.full_dump_problem(kp.MemoryImage(str(hexfile)))
+    short = tmp_path / "short.bin"
+    short.write_bytes(b"\xFF" * 1024)
+    assert "512" in kp.full_dump_problem(kp.MemoryImage(str(short)))
+    blank = tmp_path / "blank.bin"
+    blank.write_bytes(b"\x00" * (512 * 1024 - 0x4010) + b"\xFF" * 0x4010)
+    assert "загрузчика" in kp.full_dump_problem(kp.MemoryImage(str(blank)))
+    ok = tmp_path / "ok.bin"
+    ok.write_bytes(b"\x00" * (512 * 1024))
+    assert kp.full_dump_problem(kp.MemoryImage(str(ok))) is None
