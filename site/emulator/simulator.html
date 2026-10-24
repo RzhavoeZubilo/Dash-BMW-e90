@@ -134,6 +134,8 @@
         <button data-style="B" data-t="styleB"></button>
         <button data-style="C" class="on" data-t="styleC"></button>
       </div>
+      <label class="check"><input type="checkbox" id="chkPatch8"> <span data-t="patch8"></span></label>
+      <p class="hint" data-t="patch8Hint"></p>
       <label class="check"><input type="checkbox" id="chkWarn"> <span data-t="warn"></span></label>
     </div>
 
@@ -187,6 +189,10 @@
       gear: 'ПЕРЕДАЧА', rpm: 'Обороты двигателя', demo: 'Авто-разгон', stop: 'Стоп',
       selector: 'Селектор', gearNum: 'Ступень', styleA: 'Сток [D] в рамке (DKG)',
       styleB: 'Alpina D3', styleC: 'Крупная D + цифра', warn: 'Значок Check-Control (треугольник)',
+      patch8: 'Патч 8 передач',
+      patch8Hint: 'Сток берёт цифру из таблицы " 1234567" и при значении больше 7 выводит пробел — ' +
+        'на 8-й передаче цифра пропадает. Патч ставит "8" на место пробела и поднимает предел 7 → 8. ' +
+        'Байты проверены только для прошивки 9283870A; откуда берётся номер передачи, ещё не прослежено.',
       panel: 'Тип приборки (растр LCD)', panelLow: 'LOW — KOMBL2/BKOML2 (крупный)',
       panelHigh: 'HIGH — HKOML2/DKOML2 (мелкий)',
       upper: 'Верхний экран', lower: 'Нижний экран, строка под передачей',
@@ -219,6 +225,10 @@
       gear: 'GEAR', rpm: 'Engine speed', demo: 'Auto sweep', stop: 'Stop',
       selector: 'Selector', gearNum: 'Gear', styleA: 'Stock [D] boxed (DKG)',
       styleB: 'Alpina D3', styleC: 'Large D + digit', warn: 'Check-Control icon (triangle)',
+      patch8: '8-gear patch',
+      patch8Hint: 'Stock firmware takes the digit from the table " 1234567" and prints a space for values above 7 — ' +
+        'the digit disappears in 8th gear. The patch puts "8" in place of that space and raises the limit 7 → 8. ' +
+        'Bytes verified for firmware 9283870A only; where the gear number comes from is not traced yet.',
       panel: 'Cluster type (LCD pitch)', panelLow: 'LOW — KOMBL2/BKOML2 (coarse)',
       panelHigh: 'HIGH — HKOML2/DKOML2 (fine)',
       upper: 'Upper display', lower: 'Lower display, row under the gear',
@@ -562,7 +572,7 @@
   var LOWER_OPTS = ['coolant', 'oil', 'battery', 'fuel', 'outside', 'range', 'glat', 'baro', 'atf', 'none'];
 
   var state = {
-    rpm: 800, mode: 'D', gearNum: 3, style: 'C', panel: 'HIGH', warn: false, car: 'amber',
+    rpm: 800, mode: 'D', gearNum: 3, style: 'C', panel: 'HIGH', warn: false, car: 'amber', patch8: false,
     upper: 'coolant', lower: 'battery',
     upperVal: null, lowerVal: null, clock: '16:38', speed: '100',
     odo: '218016', trip: '003.1', demo: null
@@ -634,7 +644,9 @@
   function drawLower() {
     var W = P.lowerW, H = P.lowerH, F = FONTS[state.panel], low = state.panel === 'LOW';
     clear(lowerCtx, W, H);
-    var mode = state.mode, n = String(state.gearNum), label = mode;
+    // Цифра — как в прошивке: таблица " 1234567", вне 1..7 — пробел (без патча).
+    var g = state.gearNum, limit = state.patch8 ? 8 : 7;
+    var mode = state.mode, n = g >= 1 && g <= limit ? String(g) : '', label = mode;
     var top = low ? 1 : 2, gearH = F.big.h;
 
     if (state.style === 'A') {
@@ -653,14 +665,14 @@
         drawText(lowerCtx, n, Math.round((W - textW(n, F.big)) / 2), top, F.big);
       } else if (mode === 'D') {
         label = 'D' + n;
-        var dw = textW('D', F.big), sw = textW(n, F.sub), x0 = Math.round((W - dw - 2 - sw) / 2);
+        var dw = textW('D', F.big), sw = n ? textW(n, F.sub) + 2 : 0, x0 = Math.round((W - dw - sw) / 2);
         drawText(lowerCtx, 'D', x0, top, F.big);
-        drawText(lowerCtx, n, x0 + dw + 2, top + gearH - F.sub.h, F.sub);
+        if (n) drawText(lowerCtx, n, x0 + dw + 2, top + gearH - F.sub.h, F.sub);
       } else {
         drawText(lowerCtx, mode, Math.round((W - textW(mode, F.big)) / 2), top, F.big);
       }
     }
-    document.getElementById('statGear').textContent = label;
+    document.getElementById('statGear').textContent = label || '—';
     if (state.warn) {
       drawIcon(lowerCtx, 'warn', W - iconW('warn') - (low ? 2 : 6), top + Math.round((gearH - iconH('warn')) / 2));
     }
@@ -811,6 +823,7 @@
   segment('panelSeg', 'type', function (v) { state.panel = v; applyProfile(v); applyLang(); });
 
   document.getElementById('chkWarn').addEventListener('change', function (e) { state.warn = e.target.checked; render(); });
+  document.getElementById('chkPatch8').addEventListener('change', function (e) { state.patch8 = e.target.checked; render(); });
   document.getElementById('rpmSlider').addEventListener('input', function (e) {
     state.rpm = parseInt(e.target.value, 10); render();
   });
