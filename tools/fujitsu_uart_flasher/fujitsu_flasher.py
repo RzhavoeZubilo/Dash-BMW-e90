@@ -7,10 +7,11 @@ Supported MCU:
   - Fujitsu MB90F395HA (Flash: 512KB, RAM: 30KB)
   - Fujitsu MB90F394H  (Flash: 384KB, RAM: 24KB)
 
-Protocol:
-  - Fujitsu Asynchronous Serial Programming Protocol (Boot ROM mode)
-  - Mode pins: MD0=1 (+5V), MD1=1 (+5V), MD2=0 (GND)
-  - Default Baud: 9600 bps autobaud -> switches to high speed (38400 / 57600 bps)
+НЕ ПРОВЕРЕН (2026-10-24): коды команд ниже (0x05, 0x10, 0x40 …) не взяты ни
+из одного документа Fujitsu и ни разу не получили ответа от чипа; уровни MD в
+старой шапке (MD2=GND) тоже, по двум источникам, неверны. Для чтения дампа
+используйте isp-mb9x с ключом /R (см. README рядом). Скрипт запускается только
+с явным флагом --unverified-protocol.
 """
 
 import argparse
@@ -192,8 +193,15 @@ def main():
     parser.add_argument("-o", "--output", default="kombi_fujitsu_backup.bin", help="Имя выходного файла дампа (по умолчанию: kombi_fujitsu_backup.bin)")
     parser.add_argument("--size", type=int, default=512, help="Размер Flash в килобайтах (512 для MB90F395HA, 384 для MB90F394H)")
     parser.add_argument("--start", type=lambda x: int(x, 16), default=0xF80000, help="Начальный 24-битный адрес Flash (по умолчанию: 0xF80000)")
+    parser.add_argument("--unverified-protocol", action="store_true",
+                        help="запустить, понимая, что протокол не подтверждён (см. шапку файла)")
 
     args = parser.parse_args()
+    if not args.unverified_protocol:
+        print("Протокол этого скрипта не подтверждён документацией и ни разу не работал на чипе.\n"
+              "Для дампа используйте isp-mb9x с ключом /R — см. tools/fujitsu_uart_flasher/README.md.",
+              file=sys.stderr)
+        return 2
 
     flasher = FujitsuFlasher(args.port, args.baud)
     try:
@@ -205,4 +213,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

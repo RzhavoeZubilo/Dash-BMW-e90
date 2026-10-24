@@ -152,7 +152,11 @@
       <li>Only now tap <strong>RST (pin 90)</strong> to GND (or switch the power on): MD0–MD2 are sampled exactly at reset.</li>
       <li>After the dump remove the MD0 wire and reset the board — it returns to normal mode.</li>
     </ol>
-    <pre><code>python3 tools/fujitsu_uart_flasher/fujitsu_flasher.py -p /dev/tty.usbserial-XXXX -o kombi_dump.bin</code></pre>
+    <p lang="ru">Читать программой <strong>isp-mb9x</strong> (Windows) строго с ключом <code>/R</code> — только чтение; без него она стирает и пишет чип. Прочитайте дважды и сравните файлы. Подробности — <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/fujitsu_uart_flasher/README.md">README</a>.</p>
+    <p lang="en">Read with <strong>isp-mb9x</strong> (Windows), always with <code>/R</code> — read-only; without it the tool erases and programs the chip. Read twice and compare the files. Details in the <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/fujitsu_uart_flasher/README.md">README</a>.</p>
+    <pre><code>.\isp-mb9x.exe /LCOM4 /t /a /o5 /MB90F395H /b kombi_dump.bin /R /sf80000</code></pre>
+    <p class="muted" lang="ru">Скрипт <code>fujitsu_flasher.py</code> из репозитория не использовать: его протокол не подтверждён.</p>
+    <p class="muted" lang="en">Do not use the repository's <code>fujitsu_flasher.py</code>: its protocol is unverified.</p>
   </section>
 
   <section class="block">

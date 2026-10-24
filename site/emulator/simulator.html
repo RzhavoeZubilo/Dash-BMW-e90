@@ -117,7 +117,7 @@
         <div class="seg" id="modeSeg">
           <button data-mode="P">P</button><button data-mode="R">R</button>
           <button data-mode="N">N</button><button data-mode="D" class="on">D</button>
-          <button data-mode="M">M</button>
+          <button data-mode="S">S</button><button data-mode="M">M</button>
         </div>
       </div>
       <div class="row">
@@ -650,23 +650,24 @@
     var top = low ? 1 : 2, gearH = F.big.h;
 
     if (state.style === 'A') {
-      label = mode === 'M' ? 'M' + n : mode;
+      // Сток (наблюдение владельца): S показывается как "DS", номер — только в M.
+      label = mode === 'M' ? 'M' + n : mode === 'S' ? 'DS' : mode;
       var gw = textW(label, F.boxed), pad = low ? 2 : 3;
       var bw = gw + pad * 2 + 2, bh = F.boxed.h + pad * 2 + 2;
       var bx = Math.round((W - bw) / 2), by = top + Math.round((gearH - bh) / 2);
       strokeRect(lowerCtx, bx, by, bx + bw - 1, by + bh - 1);
       drawText(lowerCtx, label, bx + pad + 1, by + pad + 1, F.boxed);
     } else if (state.style === 'B') {
-      if (mode === 'D') label = 'D' + n; else if (mode === 'M') label = 'S' + n;
+      if (mode === 'D' || mode === 'S' || mode === 'M') label = mode + n;
       drawText(lowerCtx, label, Math.round((W - textW(label, F.big)) / 2), top, F.big);
     } else {
       if (mode === 'M') {
         label = n;
         drawText(lowerCtx, n, Math.round((W - textW(n, F.big)) / 2), top, F.big);
-      } else if (mode === 'D') {
-        label = 'D' + n;
-        var dw = textW('D', F.big), sw = n ? textW(n, F.sub) + 2 : 0, x0 = Math.round((W - dw - sw) / 2);
-        drawText(lowerCtx, 'D', x0, top, F.big);
+      } else if (mode === 'D' || mode === 'S') {
+        label = mode + n;
+        var dw = textW(mode, F.big), sw = n ? textW(n, F.sub) + 2 : 0, x0 = Math.round((W - dw - sw) / 2);
+        drawText(lowerCtx, mode, x0, top, F.big);
         if (n) drawText(lowerCtx, n, x0 + dw + 2, top + gearH - F.sub.h, F.sub);
       } else {
         drawText(lowerCtx, mode, Math.round((W - textW(mode, F.big)) / 2), top, F.big);
