@@ -151,11 +151,27 @@
   </section>
 
   <section class="block" id="addresses">
-    <h2><span lang="ru">Известные адреса и патчи (DKOML2)</span><span lang="en">Known addresses and patches (DKOML2)</span></h2>
-    <p lang="ru">Из <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a> —
-       смещения внутри образа flash, опробованные на дампах.</p>
-    <p lang="en">From <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a> —
-       offsets inside the flash image, tried on dumps.</p>
+    <h2><span lang="ru">Адреса из черновика патчера (DKOML2)</span><span lang="en">Addresses from the patcher draft (DKOML2)</span></h2>
+    <div class="callout warn">
+      <span lang="ru"><strong>Не проверено, не прошивать.</strong> Это адреса из раннего
+      черновика <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a>.
+      Проверка 2026-10-24 по спецификации набора команд F2MC-16LX показала, что
+      машинный код в модулях шифтлайта и телеметрии невалиден (например,
+      байт <code>0x12</code> подписан как <code>CALLP</code>, а на деле это
+      <code>SUBDC A</code>; <code>CALLP</code> — это <code>0x65</code>). Адреса
+      вызываемых функций тоже не подтверждены разбором. Проверенный патч
+      пока один — температура ОЖ на экране бортового компьютера, см.
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>.</span>
+      <span lang="en"><strong>Unverified — do not flash.</strong> These addresses come from an early
+      draft, <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a>.
+      A check against the F2MC-16LX instruction set on 2026-10-24 showed that the
+      machine code in its shift-light and telemetry modules is invalid (e.g. byte
+      <code>0x12</code> is labelled <code>CALLP</code> but is actually
+      <code>SUBDC A</code>; <code>CALLP</code> is <code>0x65</code>). The called
+      function addresses are not confirmed by disassembly either. The only verified
+      patch so far is the coolant temperature on the trip computer display, see
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>.</span>
+    </div>
     <table class="ref">
       <thead><tr>
         <th><span lang="ru">Адрес</span><span lang="en">Address</span></th>
@@ -165,7 +181,7 @@
       <tbody>
         <tr><td class="addr">0xF83DEE</td><td>8HP shiftlight</td><td lang="ru">глиф пробела (0x20) → глиф цифры «8» (0x38), отрисовка 8-й передачи</td><td lang="en">space glyph (0x20) → digit “8” glyph (0x38), renders the 8th gear</td></tr>
         <tr><td class="addr">0xFB9958</td><td>8HP shiftlight</td><td lang="ru">лимит максимальной отображаемой передачи D7 → D8</td><td lang="en">maximum displayed gear limit D7 → D8</td></tr>
-        <tr><td class="addr">0xFB9FF0</td><td>ACC shiftlight</td><td lang="ru">свободный «карман» (8 208 Б) — место для собственного F2MC-кода</td><td lang="en">free “pocket” (8,208 bytes) — room for custom F2MC code</td></tr>
+        <tr><td class="addr">0xFB9FF0</td><td>ACC shiftlight</td><td lang="ru">свободный участок flash — сюда же ложится проверенный патч ОЖ, конфликт с модулем шифтлайта</td><td lang="en">free flash area — the verified coolant patch goes here too, clashing with the shift-light module</td></tr>
         <tr><td class="addr">0xFBA060</td><td><span lang="ru">Телеметрия</span><span lang="en">Telemetry</span></td><td lang="ru">второй «карман» — диспетчер страниц (ОЖ, масло, бак, скорость)</td><td lang="en">second “pocket” — page dispatcher (coolant, oil, fuel, speed)</td></tr>
         <tr><td class="addr">0xFDC1CD</td><td><span lang="ru">Телеметрия</span><span lang="en">Telemetry</span></td><td lang="ru">хук в обработчик кнопки BC → переключение страниц</td><td lang="en">hook in the BC button handler → page switching</td></tr>
         <tr><td class="addr">0xFC2FCA</td><td>Needle sweep</td><td lang="ru">вызов штатного самотеста при старте (развёртка стрелок)</td><td lang="en">call to the stock self-test at start-up (needle sweep)</td></tr>

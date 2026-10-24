@@ -100,13 +100,14 @@
       <span class="label" data-t="rpm"></span>
       <span class="mono" id="rpmValue">800 RPM</span>
     </div>
-    <input id="rpmSlider" type="range" min="0" max="6500" step="50" value="800">
+    <input id="rpmSlider" type="range" min="0" max="7000" step="50" value="800">
     <div class="seg">
       <button class="rpm-preset" data-rpm="800">800</button>
-      <button class="rpm-preset" data-rpm="4100">4000</button>
-      <button class="rpm-preset" data-rpm="4600">4500</button>
-      <button class="rpm-preset" data-rpm="5050">5000</button>
-      <button class="rpm-preset hot" data-rpm="5300">5200 Shift!</button>
+      <button class="rpm-preset" data-rpm="4000">4000</button>
+      <button class="rpm-preset" data-rpm="4500">4500</button>
+      <button class="rpm-preset" data-rpm="5000">5000</button>
+      <button class="rpm-preset" data-rpm="5500">5500</button>
+      <button class="rpm-preset hot" data-rpm="6000">6000 Shift!</button>
       <button id="btnDemo" data-t="demo"></button>
     </div>
 
@@ -134,6 +135,15 @@
         <button data-style="C" class="on" data-t="styleC"></button>
       </div>
       <label class="check"><input type="checkbox" id="chkWarn"> <span data-t="warn"></span></label>
+    </div>
+
+    <div class="section">
+      <span class="label" data-t="carColor"></span>
+      <div class="seg" id="carSeg">
+        <button data-car="amber" class="on" data-t="carAmber"></button>
+        <button data-car="red" data-t="carRed"></button>
+      </div>
+      <p class="hint" data-t="accHint"></p>
     </div>
 
     <div class="section">
@@ -183,8 +193,12 @@
       legRam: '● найдено в прошивке (адрес в RAM известен)',
       legBus: '● приходит на приборку, адрес ещё не найден',
       legNone: '● до приборки не доходит — нужен внешний источник',
-      off: 'ВЫКЛ', ready: 'ГОТОВ (<4000)', needM: 'ВКЛЮЧИТЕ M',
-      bars: function (n) { return n + ' ПОЛОСК' + (n === 1 ? 'А' : 'И'); }, strobe: 'СТРОБ ≥5200',
+      ready: 'ГОТОВ (<4000)', needM: 'ВКЛЮЧИТЕ M',
+      bars: function (n) { return n + ' ПОЛОСК' + (n === 1 ? 'А' : 'И'); }, shift: 'ПЕРЕКЛЮЧАЙ! ≥6000',
+      carColor: 'Цвет машинки в момент переключения', carAmber: 'Оранжевый', carRed: 'Красный',
+      accHint: 'Узел над экраном — не дисплей, а лампы за подложкой с рисунком: машинка, две ' +
+        'боковые линии и 4 полоски. Полоски загораются снизу вверх (4000/4500/5000/5500), ' +
+        'на 6000 загорается всё. Пороги — для наглядности, реальные зададим в патче.',
       noteGrid: '<strong>Разрешение экрана — оценка, не дамп.</strong> Точное число точек в прошивке ' +
         'пока не найдено; сетка подобрана по пропорциям из сервис-мануала и фото. ' +
         'Сейчас: <span class="mono" id="resNote"></span>.',
@@ -211,8 +225,12 @@
       legRam: '● located in firmware (RAM address known)',
       legBus: '● reaches the cluster, address not found yet',
       legNone: '● never reaches the cluster — needs an external source',
-      off: 'OFF', ready: 'READY (<4000)', needM: 'SELECT M',
-      bars: function (n) { return n + ' BAR' + (n === 1 ? '' : 'S'); }, strobe: 'STROBE ≥5200',
+      ready: 'READY (<4000)', needM: 'SELECT M',
+      bars: function (n) { return n + ' BAR' + (n === 1 ? '' : 'S'); }, shift: 'SHIFT! ≥6000',
+      carColor: 'Car icon colour at the shift point', carAmber: 'Amber', carRed: 'Red',
+      accHint: 'The unit above the display is not part of the LCD: it is lamps behind a printed ' +
+        'backplate — a car, two side lines and 4 bars. Bars light bottom-up (4000/4500/5000/5500), ' +
+        'at 6000 everything lights. Thresholds are for illustration; real ones go into the patch.',
       noteGrid: '<strong>Display resolution is an estimate, not a dump.</strong> The exact dot count ' +
         'has not been found in firmware yet; the grid follows proportions from the service manual ' +
         'and photos. Current: <span class="mono" id="resNote"></span>.',
@@ -246,7 +264,7 @@
   // щитки PL2 на «крупный» и «мелкий» растр; абсолютное число точек не
   // подтверждено, поэтому PX меняется обратно сетке при том же размере окна.
   var PROFILES = {
-    HIGH: { upperW: 108, upperH: 28, lowerW: 108, lowerH: 64, accW: 108, accH: 46, px: 5 },
+    HIGH: { upperW: 108, upperH: 28, lowerW: 108, lowerH: 64, accW: 108, accH: 58, px: 5 },
     LOW:  { upperW: 69,  upperH: 18, lowerW: 69,  lowerH: 41, accW: 69,  accH: 29, px: 8 }
   };
   var P, PX, upperCtx, lowerCtx, accCtx;
@@ -504,19 +522,23 @@
       '#############'
     ],
     car: [
-      '...######...',
-      '..########..',
-      '..#.####.#..',
-      '#..######..#',
-      '############'
+      '...##########...',
+      '..#..........#..',
+      '..############..',
+      '.##############.',
+      '################',
+      '##.##########.##',
+      '################',
+      '###..........###'
     ]
   };
   function iconW(k) { return ICONS[k][0].length; }
   function iconH(k) { return ICONS[k].length; }
-  function drawIcon(ctx, k, x, y, color) {
-    var rows = ICONS[k];
+  function drawIcon(ctx, k, x, y, color, scale) {
+    var rows = ICONS[k], s = scale || 1;
+    ctx.fillStyle = color || ON;
     for (var ry = 0; ry < rows.length; ry++) for (var rx = 0; rx < rows[ry].length; rx++) {
-      if (rows[ry][rx] === '#') px(ctx, x + rx, y + ry, color || ON);
+      if (rows[ry][rx] === '#') ctx.fillRect((x + rx * s) * PX, (y + ry * s) * PX, s * PX, s * PX);
     }
   }
 
@@ -540,7 +562,7 @@
   var LOWER_OPTS = ['coolant', 'oil', 'battery', 'fuel', 'outside', 'range', 'glat', 'baro', 'atf', 'none'];
 
   var state = {
-    rpm: 800, mode: 'D', gearNum: 3, style: 'C', panel: 'HIGH', warn: false,
+    rpm: 800, mode: 'D', gearNum: 3, style: 'C', panel: 'HIGH', warn: false, car: 'amber',
     upper: 'coolant', lower: 'battery',
     upperVal: null, lowerVal: null, clock: '16:38', speed: '100',
     odo: '218016', trip: '003.1', demo: null
@@ -679,31 +701,50 @@
     }
   }
 
-  // ACC-узел — не точечная матрица, а лампы за подложкой с рисунком:
-  // машина и 4 раздельные трапеции дороги (подтверждено владельцем).
-  function drawAcc(lit) {
-    var W = P.accW, H = P.accH, cx = W / 2, s = H / 46;
+  // ACC-узел — не точечная матрица, а лампы за подложкой с рисунком
+  // (подтверждено владельцем): машинка, две боковые линии «дороги» и
+  // 4 раздельные полоски между ними. Каждая группа — своя лампа.
+  var LAMP = '#ffa21a', LAMP_RED = '#ff3b1a', LAMP_OFF = 'rgba(255,162,26,0.10)';
+  function drawAcc(bars, all) {
+    var W = P.accW, H = P.accH, cx = W / 2;
     clear(accCtx, W, H);
-    drawIcon(accCtx, 'car', Math.round(cx - iconW('car') / 2), Math.round(2 * s), lit > 0 ? ON : DIM);
-    var bars = 4, topY = 12 * s, botY = H - 2 * s, gap = 3 * s;
-    var rowH = (botY - topY - gap * (bars - 1)) / bars;
-    for (var i = 0; i < bars; i++) {
-      var rt = topY + i * (rowH + gap);
-      fillTrapezoid(accCtx, rt, rt + rowH, (4 + i * 7) * s, (4 + (i + 1) * 7) * s, cx, i < lit ? ON : DIM);
+    var carColor = all ? (state.car === 'red' ? LAMP_RED : LAMP) : LAMP_OFF;
+    drawIcon(accCtx, 'car', Math.round(cx - iconW('car')), 0, carColor, 2);
+
+    var top = 19, bot = H - 1;
+    var lineTop = 10, lineBot = 42, edge = 2;
+    accCtx.fillStyle = all ? LAMP : LAMP_OFF;
+    for (var y = top; y <= bot; y++) {
+      var k = (y - top) / (bot - top);
+      var off = Math.round(lineTop + (lineBot - lineTop) * k);
+      accCtx.fillRect(Math.round(cx - off - edge) * PX, y * PX, edge * PX, PX);
+      accCtx.fillRect(Math.round(cx + off) * PX, y * PX, edge * PX, PX);
+    }
+
+    // Полоски: №0 — верхняя (узкая), №3 — нижняя (широкая); горят снизу вверх.
+    var n = 4, rowH = 4, gap = 5, inner = 8;
+    var first = bot - n * rowH - (n - 1) * gap;
+    for (var i = 0; i < n; i++) {
+      var rt = first + i * (rowH + gap), rb = rt + rowH;
+      var kt = (rt - top) / (bot - top), kb = (rb - top) / (bot - top);
+      var ht = lineTop + (lineBot - lineTop) * kt - inner;
+      var hb = lineTop + (lineBot - lineTop) * kb - inner;
+      var lit = all || (n - 1 - i) < bars;
+      fillTrapezoid(accCtx, rt, rb, ht, hb, cx, lit ? LAMP : LAMP_OFF);
     }
   }
 
   function render() {
     document.getElementById('rpmValue').textContent = state.rpm + ' RPM';
     document.getElementById('statRpm').textContent = state.rpm;
-    var manual = state.mode === 'M', lit = 0, strobe = false, txt;
-    if (manual && state.rpm >= 5200) { lit = 4; strobe = true; txt = t('strobe'); }
-    else if (manual && state.rpm >= 5000) { lit = 3; txt = t('bars')(3); }
-    else if (manual && state.rpm >= 4500) { lit = 2; txt = t('bars')(2); }
-    else if (manual && state.rpm >= 4000) { lit = 1; txt = t('bars')(1); }
-    else txt = manual ? t('ready') : t('needM');
+    var manual = state.mode === 'M', bars = 0, all = false, txt;
+    if (manual && state.rpm >= 6000) { bars = 4; all = true; txt = t('shift'); }
+    else if (manual && state.rpm >= 4000) {
+      bars = Math.min(4, 1 + Math.floor((state.rpm - 4000) / 500));
+      txt = t('bars')(bars);
+    } else txt = manual ? t('ready') : t('needM');
     document.getElementById('statShift').textContent = txt;
-    if (state.panel !== 'LOW') drawAcc(strobe ? (Math.floor(Date.now() / 100) % 2 ? 4 : 0) : lit);
+    if (state.panel !== 'LOW') drawAcc(bars, all);
     drawUpper();
     drawLower();
   }
@@ -766,6 +807,7 @@
   segment('modeSeg', 'mode', function (v) { state.mode = v; render(); });
   segment('numSeg', 'num', function (v) { state.gearNum = parseInt(v, 10); render(); });
   segment('styleSeg', 'style', function (v) { state.style = v; render(); });
+  segment('carSeg', 'car', function (v) { state.car = v; render(); });
   segment('panelSeg', 'type', function (v) { state.panel = v; applyProfile(v); applyLang(); });
 
   document.getElementById('chkWarn').addEventListener('change', function (e) { state.warn = e.target.checked; render(); });
@@ -799,13 +841,11 @@
     state.mode = 'M'; state.gearNum = 2; state.rpm = 2500;
     state.demo = setInterval(function () {
       state.rpm += 60;
-      if (state.rpm >= 5600) { state.rpm = 3800; state.gearNum = state.gearNum < 4 ? state.gearNum + 1 : 2; }
+      if (state.rpm >= 6400) { state.rpm = 3800; state.gearNum = state.gearNum < 4 ? state.gearNum + 1 : 2; }
       document.getElementById('rpmSlider').value = state.rpm;
       render();
     }, 40);
   });
-
-  setInterval(function () { if (state.mode === 'M' && state.rpm >= 5200) render(); }, 100);
 
   window.addEventListener('storage', function (e) {
     if (e.key === LANG_KEY && (e.newValue === 'ru' || e.newValue === 'en') && e.newValue !== lang) {
