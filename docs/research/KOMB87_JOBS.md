@@ -1,7 +1,20 @@
-# komb87.prg -- full job list (133 jobs)
+# komb87.prg -- job list (133 described of 140)
 
 Source: BMW SP-Daten 69.0/BASE/ecu/komb87.prg
 Decoded with decoderPrg.py (BimmerDis port, from ~/Work/Develop/symfony/BimmerDaten).
+
+> The SGBD file contains **140 jobs**. Listed below are the **133 that carry a
+> description in the SGBD**. The remaining **7 have no comment in the file**
+> (the decoder returns a `JOBNAME:` placeholder), so they are only named here,
+> not annotated — no description has been invented for them:
+> `CONNECTEDDRIVE_DATEN_LESEN_1` @ 0x0008E695,
+> `CONNECTEDDRIVE_DATEN_LESEN_2` @ 0x0009E362,
+> `CONNECTEDDRIVE_DATEN_LESEN_3` @ 0x000AE02F,
+> `ECOWERTE_LESEN` @ 0x000BDCFC,
+> `UHRZEIT_UND_TIMER_LESEN` @ 0x000C1DDA,
+> `_SERIENNUMMER_KORREKTUR` @ 0x000C3D7C,
+> `STATUS_BOS_CODIERUNG_ERWEITERT` @ 0x000C64F4.
+> (See `docs/research/AUDIT_2026-10.md`.)
 
 ## All jobs (name @ address, first comment line)
 

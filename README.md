@@ -77,7 +77,7 @@ docs/                       Результаты реверса — смысло
   research/
     ANALYSIS_NOTES.md                подробный журнал реверса (читать первым)
     HANDOFF.md                       конспект журнала
-    KOMB87_JOBS.md                   список 140 джобов SGBD
+    KOMB87_JOBS.md                   133 описанных джоба SGBD (из 140)
     KOMB87_SGBD_FINDINGS.md          разбор SGBD: сегменты, рутины, телетраммы
     INSTRUCTION_READ_FLASH.md        пошаговая инструкция для Windows
     disasm/                          листинги ключевых джобов
