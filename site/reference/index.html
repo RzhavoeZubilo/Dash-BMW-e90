@@ -153,38 +153,42 @@
   <section class="block" id="addresses">
     <h2><span lang="ru">Адреса из черновика патчера (DKOML2)</span><span lang="en">Addresses from the patcher draft (DKOML2)</span></h2>
     <div class="callout warn">
-      <span lang="ru"><strong>Не проверено, не прошивать.</strong> Это адреса из раннего
-      черновика <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a>.
-      Проверка 2026-10-24 по спецификации набора команд F2MC-16LX показала, что
-      машинный код в модулях шифтлайта и телеметрии невалиден (например,
-      байт <code>0x12</code> подписан как <code>CALLP</code>, а на деле это
-      <code>SUBDC A</code>; <code>CALLP</code> — это <code>0x65</code>). Адреса
-      вызываемых функций тоже не подтверждены разбором. Проверенный патч
-      пока один — температура ОЖ на экране бортового компьютера, см.
-      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>.</span>
-      <span lang="en"><strong>Unverified — do not flash.</strong> These addresses come from an early
-      draft, <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a>.
-      A check against the F2MC-16LX instruction set on 2026-10-24 showed that the
-      machine code in its shift-light and telemetry modules is invalid (e.g. byte
-      <code>0x12</code> is labelled <code>CALLP</code> but is actually
-      <code>SUBDC A</code>; <code>CALLP</code> is <code>0x65</code>). The called
-      function addresses are not confirmed by disassembly either. The only verified
-      patch so far is the coolant temperature on the trip computer display, see
-      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>.</span>
+      <span lang="ru"><strong>Модули черновика удалены, не прошивать.</strong> Ранний черновик
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a> содержал четыре модуля. Аудит 2026-10-24
+      (дизассемблер + спецификация набора команд F2MC-16LX + реальные образы) показал, что
+      машинный код шифтлайта и телеметрии невалиден (например, байт <code>0x12</code> подписан
+      как <code>CALLP</code>, а на деле это <code>SUBDC A</code>; <code>CALLP</code> — это
+      <code>0x65</code>), needle sweep ничего не меняет, а смысл патча 8 передач подтверждён
+      не до конца. Все четыре удалены. Теперь в патчере только проверенный патч температуры ОЖ
+      на экране бортового компьютера, и он ложится только на <code>9213308A</code>: перед записью
+      патчер сверяет исходные байты и на другом образе ничего не пишет. Подробности —
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>, раздел «аудит kombi_patcher.py».</span>
+      <span lang="en"><strong>Draft modules removed — do not flash them.</strong> The early draft,
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/tools/patcher/kombi_patcher.py">tools/patcher/kombi_patcher.py</a>, had four modules. An audit on 2026-10-24
+      (disassembler + F2MC-16LX instruction set spec + real images) showed that the machine code
+      in the shift-light and telemetry modules is invalid (e.g. byte <code>0x12</code> is labelled
+      <code>CALLP</code> but is actually <code>SUBDC A</code>; <code>CALLP</code> is
+      <code>0x65</code>), the needle sweep changes nothing, and the meaning of the 8-gear patch is
+      only partly confirmed. All four are gone. The patcher now holds only the verified coolant
+      temperature patch for the trip computer display, and it applies to <code>9213308A</code>
+      only: the patcher checks the original bytes first and writes nothing to any other image.
+      Details: <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/research/HANDOFF.md">HANDOFF.md</a>, section “аудит kombi_patcher.py”.</span>
     </div>
     <table class="ref">
       <thead><tr>
         <th><span lang="ru">Адрес</span><span lang="en">Address</span></th>
         <th><span lang="ru">Модуль патчера</span><span lang="en">Patcher module</span></th>
-        <th><span lang="ru">Что это</span><span lang="en">What it is</span></th>
+        <th><span lang="ru">Результат проверки</span><span lang="en">Check result</span></th>
       </tr></thead>
       <tbody>
-        <tr><td class="addr">0xF83DEE</td><td>8HP shiftlight</td><td lang="ru">глиф пробела (0x20) → глиф цифры «8» (0x38), отрисовка 8-й передачи</td><td lang="en">space glyph (0x20) → digit “8” glyph (0x38), renders the 8th gear</td></tr>
-        <tr><td class="addr">0xFB9958</td><td>8HP shiftlight</td><td lang="ru">лимит максимальной отображаемой передачи D7 → D8</td><td lang="en">maximum displayed gear limit D7 → D8</td></tr>
-        <tr><td class="addr">0xFB9FF0</td><td>ACC shiftlight</td><td lang="ru">свободный участок flash — сюда же ложится проверенный патч ОЖ, конфликт с модулем шифтлайта</td><td lang="en">free flash area — the verified coolant patch goes here too, clashing with the shift-light module</td></tr>
-        <tr><td class="addr">0xFBA060</td><td><span lang="ru">Телеметрия</span><span lang="en">Telemetry</span></td><td lang="ru">второй «карман» — диспетчер страниц (ОЖ, масло, бак, скорость)</td><td lang="en">second “pocket” — page dispatcher (coolant, oil, fuel, speed)</td></tr>
-        <tr><td class="addr">0xFDC1CD</td><td><span lang="ru">Телеметрия</span><span lang="en">Telemetry</span></td><td lang="ru">хук в обработчик кнопки BC → переключение страниц</td><td lang="en">hook in the BC button handler → page switching</td></tr>
-        <tr><td class="addr">0xFC2FCA</td><td>Needle sweep</td><td lang="ru">вызов штатного самотеста при старте (развёртка стрелок)</td><td lang="en">call to the stock self-test at start-up (needle sweep)</td></tr>
+        <tr><td class="addr">0xFE996C</td><td><span lang="ru">ОЖ (в патчере)</span><span lang="en">Coolant (in patcher)</span></td><td lang="ru"><strong>проверено:</strong> начало дефолт-обработчика режима 0 BC-дисплея (<code>57 10 16 F1</code>) → <code>63 F0 9F FB</code> = <code>JMPP 0xFB9FF0</code>; единственная ссылка на адрес — <code>JMP</code> в <code>0xFE97DB</code></td><td lang="en"><strong>verified:</strong> start of the BC display mode-0 default handler (<code>57 10 16 F1</code>) → <code>63 F0 9F FB</code> = <code>JMPP 0xFB9FF0</code>; the only reference to it is the <code>JMP</code> at <code>0xFE97DB</code></td></tr>
+        <tr><td class="addr">0xFB9FF0</td><td><span lang="ru">ОЖ (в патчере)</span><span lang="en">Coolant (in patcher)</span></td><td lang="ru"><strong>проверено:</strong> 35 байт обработчика в стёртой области (<code>0xFF</code> во всех четырёх образах), прогнан интерпретатором <code>f2mc_mini_emu.py</code>; на железе не проверялся</td><td lang="en"><strong>verified:</strong> 35-byte handler in an erased area (<code>0xFF</code> in all four images), run through the <code>f2mc_mini_emu.py</code> interpreter; not tested on hardware</td></tr>
+        <tr><td class="addr">0xF83DEE</td><td><span lang="ru">8 передач (удалён)</span><span lang="en">8 gears (removed)</span></td><td lang="ru">только в <code>9283870A</code>: элемент 8 таблицы символов <code>" 1234567"</code> по <code>0xF83DE6</code>, пробел → «8»; что значение — номер передачи, не проверено</td><td lang="en"><code>9283870A</code> only: entry 8 of the <code>" 1234567"</code> character table at <code>0xF83DE6</code>, space → “8”; that the value is the gear number is not verified</td></tr>
+        <tr><td class="addr">0xFB9958</td><td><span lang="ru">8 передач (удалён)</span><span lang="en">8 gears (removed)</span></td><td lang="ru">только в <code>9283870A</code>: <code>MOVN A,#7</code> в проверке диапазона 1..7 перед выборкой из этой таблицы; <code>D7</code> → <code>D8</code> — валидная инструкция, источник значения не прослежен</td><td lang="en"><code>9283870A</code> only: <code>MOVN A,#7</code> in a 1..7 range check before the lookup in that table; <code>D7</code> → <code>D8</code> is a valid instruction, the value's source is not traced</td></tr>
+        <tr><td class="addr">0xFB9FF0</td><td><span lang="ru">Шифтлайт ACC (удалён)</span><span lang="en">ACC shift-light (removed)</span></td><td lang="ru">106 байт невалидного кода, без возврата; к тому же затирал место патча ОЖ</td><td lang="en">106 bytes of invalid code with no return; it also overwrote the coolant patch area</td></tr>
+        <tr><td class="addr">0xFBA060</td><td><span lang="ru">Телеметрия (удалён)</span><span lang="en">Telemetry (removed)</span></td><td lang="ru">26 байт невалидного кода</td><td lang="en">26 bytes of invalid code</td></tr>
+        <tr><td class="addr">0xFDC1CD</td><td><span lang="ru">Телеметрия (удалён)</span><span lang="en">Telemetry (removed)</span></td><td lang="ru">«хук» <code>12 60 A0 FB</code> = <code>SUBDC A</code> / <code>BRA</code>; в <code>9283870A</code> затирал инструкции посреди функции <code>0xFDC1C6</code>; что это обработчик кнопки BC, не подтверждено</td><td lang="en">“hook” <code>12 60 A0 FB</code> = <code>SUBDC A</code> / <code>BRA</code>; in <code>9283870A</code> it overwrote instructions in the middle of function <code>0xFDC1C6</code>; that this is the BC button handler is not confirmed</td></tr>
+        <tr><td class="addr">0xFC2FCA</td><td><span lang="ru">Needle sweep (удалён)</span><span lang="en">Needle sweep (removed)</span></td><td lang="ru">в <code>9283870A</code> там уже <code>10 65 AC</code> (часть <code>CALLP 0xFAEAAC</code>) — патч ничего не меняет; в <code>9213308A</code> бил посреди <code>JMP</code></td><td lang="en">in <code>9283870A</code> the bytes are already <code>10 65 AC</code> (part of <code>CALLP 0xFAEAAC</code>), so the patch changes nothing; in <code>9213308A</code> it hit the middle of a <code>JMP</code></td></tr>
         <tr><td class="addr">0xFFC000–0xFFFFFF</td><td>—</td><td lang="ru">защищённая область (загрузчик + векторы CPU); нет ни в одном <code>.0pa</code>/<code>.0ba</code>, нужен дамп через <code>SPEICHER_LESEN</code> или UART Boot ROM</td><td lang="en">protected area (loader + CPU vectors); absent from every <code>.0pa</code>/<code>.0ba</code>, needs a dump via <code>SPEICHER_LESEN</code> or the UART Boot ROM</td></tr>
       </tbody>
     </table>

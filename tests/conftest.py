@@ -9,7 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-for sub in ("tools/re", "tools/check_firmware"):
+for sub in ("tools/re", "tools/check_firmware", "tools/patcher"):
     p = str(REPO_ROOT / sub)
     if p not in sys.path:
         sys.path.insert(0, p)
