@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru" data-title-ru="Диагностика (бета) — Dash-BMW-e90" data-title-en="Diagnostics (beta) — Dash-BMW-e90">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диагностика (бета) — Dash-BMW-e90</title>
+<meta name="description" content="Чтение идентификации приборки BMW E9x прямо из браузера через кабель K+DCAN. Read BMW E9x cluster identification from the browser over a K+DCAN cable.">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="stylesheet" href="../assets/style.css?v=2">
+<script src="../assets/i18n.js?v=2"></script>
+<style>
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .controls button { cursor: pointer; font-family: var(--sans); }
+  .controls button:disabled { opacity: .45; cursor: not-allowed; }
+  .field { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text-dim); }
+  .field input[type=text] {
+    width: 64px; font: 13px var(--mono); color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
+  }
+  .state { font: 13px var(--mono); margin-top: 12px; color: var(--text-dim); }
+  .state.ok { color: #7fd18b; } .state.err { color: #ff7b6b; }
+  #log { max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-all; margin: 0; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <nav class="site-nav">
+    <a class="site-brand" href="../index.html"><span class="dot">●</span> Dash-BMW-e90</a>
+    <div class="site-links">
+      <a href="../index.html"><span lang="ru">Главная</span><span lang="en">Home</span></a>
+      <a href="../reference/index.html"><span lang="ru">Справочник</span><span lang="en">Reference</span></a>
+      <a href="../emulator/index.html"><span lang="ru">Эмулятор экрана</span><span lang="en">Display emulator</span></a>
+      <a href="../uart/index.html"><span lang="ru">UART-подключение</span><span lang="en">UART wiring</span></a>
+      <a href="../diag/index.html" class="active"><span lang="ru">Диагностика</span><span lang="en">Diagnostics</span></a>
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="support-link" data-support target="_blank" rel="noopener"><span lang="ru">♥ Поддержать</span><span lang="en">♥ Support</span></a>
+      <button class="lang-toggle" type="button">EN</button>
+    </div>
+  </nav>
+</header>
+
+<div class="page" style="padding-top:36px">
+
+  <h1 style="margin-bottom:4px"><span lang="ru">Диагностика приборки из браузера</span><span lang="en">Cluster diagnostics in the browser</span> <span class="badge">BETA</span></h1>
+  <p class="muted" lang="ru">
+    Первый шаг к «комбайну»: подключение к машине прямо со страницы, без
+    EDIABAS, Java и установки программ. Сейчас страница умеет одно —
+    прочитать идентификацию приборки (джоб <code>IDENT</code>). Она
+    <strong>только читает</strong> и ничего не записывает в блок.
+  </p>
+  <p class="muted" lang="en">
+    The first step towards an all-in-one tool: talk to the car straight from a
+    web page — no EDIABAS, no Java, nothing to install. For now the page does
+    one thing: read the cluster identification (the <code>IDENT</code> job). It
+    <strong>only reads</strong> and never writes anything to the module.
+  </p>
+
+  <div class="callout warn">
+    <span lang="ru"><strong>Что нужно:</strong> Chrome или Edge на компьютере (Safari и Firefox не умеют
+    работать с COM-портом), кабель K+DCAN, машина с D-CAN (E9x примерно с 03/2007)
+    и включённое зажигание. Машины старше — на K-линии, эта версия их не поддерживает.</span>
+    <span lang="en"><strong>You need:</strong> desktop Chrome or Edge (Safari and Firefox cannot access
+    serial ports), a K+DCAN cable, a D-CAN car (E9x from roughly 03/2007) and the
+    ignition on. Older cars use the K-line, which this version does not support.</span>
+  </div>
+
+  <div class="callout warn" id="noSerial" hidden>
+    <span lang="ru">Этот браузер не поддерживает Web Serial. Откройте страницу в Chrome или Edge на компьютере.</span>
+    <span lang="en">This browser does not support Web Serial. Open the page in desktop Chrome or Edge.</span>
+  </div>
+
+  <section class="block panel">
+    <div class="controls">
+      <button class="btn primary" id="btnConnect"><span lang="ru">Подключить кабель</span><span lang="en">Connect cable</span></button>
+      <button class="btn" id="btnIdent" disabled><span lang="ru">Прочитать IDENT</span><span lang="en">Read IDENT</span></button>
+      <button class="btn" id="btnDisconnect" disabled><span lang="ru">Отключить</span><span lang="en">Disconnect</span></button>
+      <label class="field"><span lang="ru">Адрес блока</span><span lang="en">Module address</span> 0x<input type="text" id="addr" value="60" maxlength="2" spellcheck="false"></label>
+      <label class="field"><input type="checkbox" id="dtr" checked> DTR/RTS</label>
+    </div>
+    <div class="state" id="state"></div>
+  </section>
+
+  <div class="grid">
+    <section class="block" style="margin-top:0">
+      <h2><span lang="ru">Результат</span><span lang="en">Result</span></h2>
+      <table class="ref" id="result">
+        <tbody><tr><td class="muted"><span lang="ru">Пока ничего не прочитано.</span><span lang="en">Nothing read yet.</span></td></tr></tbody>
+      </table>
+    </section>
+    <section class="block" style="margin-top:0">
+      <h2><span lang="ru">Обмен с кабелем</span><span lang="en">Cable traffic</span></h2>
+      <pre><code id="log"></code></pre>
+    </section>
+  </div>
+
+  <section class="block">
+    <h2><span lang="ru">Как это устроено</span><span lang="en">How it works</span></h2>
+    <p lang="ru">
+      Кабель K+DCAN сам переводит запросы в кадры CAN, поэтому браузеру достаточно
+      открыть COM-порт на 115200 бод и отправить телеграмму BMW-FAST:
+      <code>82 60 F1 1A 80 6D</code> — «адресату <code>0x60</code> (приборка) от
+      тестера <code>F1</code>: сервис <code>$1A</code> ReadEcuIdentification,
+      идентификатор <code>80</code>», последний байт — контрольная сумма. Байты запроса
+      и разбор ответа взяты из байткода джоба <code>IDENT</code> в заводском
+      <code>KOMB87.prg</code>; подробности —
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/D-CAN_TRANSPORT_RESEARCH.md">D-CAN_TRANSPORT_RESEARCH.md</a>.
+    </p>
+    <p lang="en">
+      The K+DCAN cable turns requests into CAN frames itself, so the browser only
+      has to open the serial port at 115200 baud and send a BMW-FAST telegram:
+      <code>82 60 F1 1A 80 6D</code> — “to module <code>0x60</code> (cluster) from
+      tester <code>F1</code>: service <code>$1A</code> ReadEcuIdentification,
+      identifier <code>80</code>”, with a checksum as the last byte. The request
+      bytes and the response layout come from the bytecode of the <code>IDENT</code>
+      job in the factory <code>KOMB87.prg</code>; details in
+      <a href="https://github.com/RzhavoeZubilo/Dash-BMW-e90/blob/main/docs/D-CAN_TRANSPORT_RESEARCH.md">D-CAN_TRANSPORT_RESEARCH.md</a> (Russian).
+    </p>
+    <h3><span lang="ru">Если не отвечает</span><span lang="en">No answer?</span></h3>
+    <ul lang="ru">
+      <li>Зажигание должно быть включено (клемма 15).</li>
+      <li>Снимите или поставьте галочку DTR/RTS и попробуйте снова — разные кабели ведут себя по-разному.</li>
+      <li>На Windows в свойствах COM-порта FTDI выставьте Latency Timer = 1 мс.</li>
+      <li>Пришлите содержимое окна «Обмен с кабелем» в обсуждение на GitHub — по нему видно, где застряло.</li>
+    </ul>
+    <ul lang="en">
+      <li>The ignition must be on (terminal 15).</li>
+      <li>Toggle the DTR/RTS checkbox and retry — cables differ.</li>
+      <li>On Windows set the FTDI COM port Latency Timer to 1 ms.</li>
+      <li>Post the “Cable traffic” log in a GitHub discussion — it shows where things stopped.</li>
+    </ul>
+  </section>
+
+</div>
+
+<footer class="site">
+  <p lang="ru">Dash-BMW-e90 — исследовательский проект, не аффилирован с BMW AG. GPL-3.0.
+  <a data-support target="_blank" rel="noopener">♥ Поддержать автора</a></p>
+  <p lang="en">Dash-BMW-e90 is a research project, not affiliated with BMW AG. GPL-3.0.
+  <a data-support target="_blank" rel="noopener">♥ Support the author</a></p>
+</footer>
+
+<script src="bmwfast.js"></script>
+<script>
+(function () {
+  'use strict';
+  var B = window.BmwFast;
+  var $ = function (id) { return document.getElementById(id); };
+  function lang() { return document.documentElement.getAttribute('data-lang') === 'en' ? 'en' : 'ru'; }
+
+  var TXT = {
+    ru: {
+      idle: 'Кабель не подключён.', opened: 'Порт открыт. Включите зажигание и нажмите «Прочитать IDENT».',
+      waiting: 'Жду ответ…', okIdent: 'Ответ получен.', closed: 'Порт закрыт.',
+      timeout: 'Нет ответа за отведённое время.', badAddr: 'Адрес — две hex-цифры, например 60.',
+      negative: 'Блок отказал: код ', unexpected: 'Неожиданный ответ — см. журнал.',
+      cancelled: 'Выбор порта отменён.', field: 'Поле', value: 'Значение'
+    },
+    en: {
+      idle: 'No cable connected.', opened: 'Port open. Switch the ignition on and press “Read IDENT”.',
+      waiting: 'Waiting for the answer…', okIdent: 'Answer received.', closed: 'Port closed.',
+      timeout: 'No answer within the timeout.', badAddr: 'Address must be two hex digits, e.g. 60.',
+      negative: 'Module refused: code ', unexpected: 'Unexpected answer — see the log.',
+      cancelled: 'Port selection cancelled.', field: 'Field', value: 'Value'
+    }
+  };
+  var NRC = { 0x11: 'serviceNotSupported', 0x12: 'subFunctionNotSupported', 0x22: 'conditionsNotCorrect',
+              0x31: 'requestOutOfRange', 0x33: 'securityAccessDenied', 0x78: 'responsePending' };
+  var LABELS = {
+    ru: { ID_BMW_NR: 'Номер детали BMW', ID_HW_NR: 'Индекс железа', ID_COD_INDEX: 'Индекс коддинга',
+          ID_DIAG_INDEX: 'Индекс диагностики', ID_VAR_INDEX: 'Индекс варианта', ID_DATUM: 'Дата изготовления',
+          ID_LIEF_NR: 'Поставщик', ID_SW_NR_MCV: 'ПО: message catalogue', ID_SW_NR_FSV: 'ПО: функциональное',
+          ID_SW_NR_OSV: 'ПО: операционная система', ID_SW_NR_RES: 'ПО: резерв', RAW: 'Сырой ответ' },
+    en: { ID_BMW_NR: 'BMW part number', ID_HW_NR: 'Hardware index', ID_COD_INDEX: 'Coding index',
+          ID_DIAG_INDEX: 'Diagnostic index', ID_VAR_INDEX: 'Variant index', ID_DATUM: 'Manufacturing date',
+          ID_LIEF_NR: 'Supplier', ID_SW_NR_MCV: 'SW: message catalogue', ID_SW_NR_FSV: 'SW: functional',
+          ID_SW_NR_OSV: 'SW: operating system', ID_SW_NR_RES: 'SW: reserved', RAW: 'Raw answer' }
+  };
+
+  var port = null, reader = null, rx = [], wake = null, lastState = 'idle', lastClass = '', lastResult = null;
+
+  function setState(key, cls, extra) {
+    lastState = key; lastClass = cls || '';
+    $('state').className = 'state ' + lastClass;
+    $('state').textContent = TXT[lang()][key] + (extra || '');
+  }
+  function log(dir, bytes) {
+    var t = new Date().toISOString().slice(11, 23);
+    $('log').textContent += t + ' ' + dir + ' ' + (typeof bytes === 'string' ? bytes : B.hexStr(bytes)) + '\n';
+    $('log').parentNode.scrollTop = 1e9;
+  }
+  function setButtons(connected) {
+    $('btnConnect').disabled = connected;
+    $('btnIdent').disabled = !connected;
+    $('btnDisconnect').disabled = !connected;
+  }
+
+  async function readLoop() {
+    while (port && port.readable) {
+      reader = port.readable.getReader();
+      try {
+        for (;;) {
+          var r = await reader.read();
+          if (r.done) break;
+          for (var i = 0; i < r.value.length; i++) rx.push(r.value[i]);
+          log('RX', Array.from(r.value));
+          if (wake) wake();
+        }
+      } catch (e) {
+        log('!!', String(e));
+      } finally {
+        reader.releaseLock();
+        reader = null;
+      }
+    }
+  }
+
+  function waitData(ms) {
+    return new Promise(function (resolve) {
+      var timer = setTimeout(function () { wake = null; resolve(false); }, ms);
+      wake = function () { clearTimeout(timer); wake = null; resolve(true); };
+    });
+  }
+
+  // Отправить телеграмму и дождаться ответа блока. Эхо собственной посылки
+  // (его возвращают «умные» кабели) пропускается; 7F xx 78 продлевает ожидание.
+  async function transact(target, data) {
+    var tel = B.buildTelegram(target, data);
+    rx.length = 0;
+    var w = port.writable.getWriter();
+    try { await w.write(new Uint8Array(tel)); } finally { w.releaseLock(); }
+    log('TX', tel);
+    var deadline = Date.now() + 2000;
+    for (;;) {
+      var p = B.parseTelegram(rx);
+      if (p.error) { log('!!', p.error); rx.shift(); continue; }
+      if (p.tel) {
+        rx.splice(0, p.size);
+        if (p.tel.raw.join() === tel.join()) { log('..', 'echo'); continue; }
+        var d = p.tel.data;
+        if (d[0] === 0x7F && d[2] === 0x78) { deadline = Date.now() + 5000; continue; }
+        return p.tel;
+      }
+      var left = deadline - Date.now();
+      if (left <= 0 || !(await waitData(left))) throw new Error('timeout');
+    }
+  }
+
+  function renderResult(r) {
+    lastResult = r;
+    var L = LABELS[lang()], html = '<thead><tr><th>' + TXT[lang()].field + '</th><th>' + TXT[lang()].value + '</th></tr></thead><tbody>';
+    Object.keys(r).forEach(function (k) {
+      html += '<tr><td>' + (L[k] || k) + '<br><code>' + k + '</code></td><td class="addr">' + r[k] + '</td></tr>';
+    });
+    $('result').innerHTML = html + '</tbody>';
+  }
+
+  $('btnConnect').addEventListener('click', async function () {
+    try {
+      port = await navigator.serial.requestPort();
+    } catch (e) { setState('cancelled'); return; }
+    try {
+      await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', bufferSize: 4096 });
+      if ($('dtr').checked) await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+      setButtons(true); setState('opened', 'ok');
+      log('--', 'open 115200 8N1' + ($('dtr').checked ? ' DTR+RTS' : ''));
+      readLoop();
+    } catch (e) { setState('idle', 'err', ' ' + e.message); port = null; }
+  });
+
+  $('btnIdent').addEventListener('click', async function () {
+    var addr = parseInt($('addr').value, 16);
+    if (!/^[0-9a-fA-F]{1,2}$/.test($('addr').value)) { setState('badAddr', 'err'); return; }
+    $('btnIdent').disabled = true;
+    setState('waiting');
+    try {
+      var tel = await transact(addr, [0x1A, 0x80]);
+      var r = B.decodeIdent(tel.data);
+      if (r.negative) {
+        setState('negative', 'err', '0x' + r.nrc.toString(16).toUpperCase() + (NRC[r.nrc] ? ' (' + NRC[r.nrc] + ')' : ''));
+      } else if (r.unexpected) {
+        setState('unexpected', 'err');
+      } else {
+        r.RAW = B.hexStr(tel.data);
+        renderResult(r); setState('okIdent', 'ok');
+      }
+    } catch (e) {
+      setState(e.message === 'timeout' ? 'timeout' : 'idle', 'err', e.message === 'timeout' ? '' : ' ' + e.message);
+    } finally {
+      $('btnIdent').disabled = !port;
+    }
+  });
+
+  $('btnDisconnect').addEventListener('click', async function () {
+    try { if (reader) await reader.cancel(); } catch (e) {}
+    try { await port.close(); } catch (e) {}
+    port = null; setButtons(false); setState('closed'); log('--', 'close');
+  });
+
+  document.addEventListener('langchange', function () {
+    setState(lastState, lastClass);
+    if (lastResult) renderResult(lastResult);
+  });
+
+  if (!('serial' in navigator)) {
+    $('noSerial').hidden = false;
+    $('btnConnect').disabled = true;
+  }
+  setState('idle');
+})();
+</script>
+
+</body>
+</html>
